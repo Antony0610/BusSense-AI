@@ -1,1 +1,53 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>BusSense AI Dashboard</title><link rel="stylesheet" href="styles.css"><script src="https://cdn.jsdelivr.net/npm/chart.js"></script></head><body><header><h1>BusSense AI Authority Dashboard</h1><p>Climate-smart occupancy monitoring for KSRTC and private buses.</p></header><main><section class="cards" id="metrics"></section><section><h2>Live Bus List</h2><table><thead><tr><th>Bus</th><th>Route</th><th>Operator</th><th>Passengers</th><th>Occupancy</th><th>Seats</th><th>Status</th></tr></thead><tbody id="busRows"></tbody></table></section><section class="grid"><div><h2>Route-wise Statistics</h2><canvas id="routeChart"></canvas></div><div><h2>Overcrowding Alerts</h2><ul id="alerts"></ul><h2>Recommendations</h2><ul id="recommendations"></ul></div></section></main><script src="app.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>BusSense AI Dashboard</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+  <header>
+    <h1>BusSense AI Authority Dashboard</h1>
+    <p>Real-time climate-smart occupancy monitoring for KSRTC and private buses.</p>
+  </header>
+  <main>
+    <section class="cards" id="metrics"></section>
+    <section class="grid two">
+      <div>
+        <h2>Interactive Live Bus Map</h2>
+        <div id="map"></div>
+      </div>
+      <div>
+        <h2>Demand Prediction</h2>
+        <canvas id="demandChart"></canvas>
+      </div>
+    </section>
+    <section>
+      <h2>Live Bus List</h2>
+      <table>
+        <thead><tr><th>Bus</th><th>Route</th><th>Operator</th><th>Passengers</th><th>Occupancy</th><th>Seats</th><th>Score</th><th>Status</th></tr></thead>
+        <tbody id="busRows"></tbody>
+      </table>
+    </section>
+    <section class="grid two">
+      <div>
+        <h2>Route-wise Historical Occupancy</h2>
+        <canvas id="routeChart"></canvas>
+      </div>
+      <div>
+        <h2>Overcrowding Alerts</h2>
+        <ul id="alerts"></ul>
+        <h2>Less-Crowded Bus Recommendations</h2>
+        <ul id="busRecommendations"></ul>
+        <h2>Route Optimization Recommendations</h2>
+        <ul id="recommendations"></ul>
+      </div>
+    </section>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

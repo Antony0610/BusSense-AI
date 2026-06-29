@@ -7,6 +7,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 from statistics import mean
 
+from analytics import predict_demand
+from gps_simulator import simulate_location
+from recommendation import crowd_level, recommend_less_crowded_buses
+from sustainability import bus_utilization_score, estimate_savings
+
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 
@@ -55,20 +60,6 @@ def init_db(seed: bool = True) -> None:
                     )
 
 
-def crowd_level(occupancy: float) -> str:
-    if occupancy >= 80:
-        return "Red"
-    if occupancy >= 55:
-        return "Yellow"
-    return "Green"
-
-
-def savings(records: list[dict]) -> dict:
-    underused = sum(1 for r in records if r["occupancy_percentage"] < 40)
-    balanced = sum(1 for r in records if 55 <= r["occupancy_percentage"] <= 85)
-    fuel_litres = round((underused * 1.8) + (balanced * 0.9), 2)
-    return {"estimated_fuel_savings_litres": fuel_litres, "estimated_co2_reduction_kg": round(fuel_litres * 2.68, 2)}
-
 
 @app.route("/")
 def index():
@@ -91,7 +82,14 @@ def buses():
                    SELECT id FROM occupancy_records WHERE bus_id = b.bus_id ORDER BY timestamp DESC LIMIT 1
                ) ORDER BY b.route_number, b.bus_id"""
         ).fetchall()
-    payload = [row_to_dict(r) | {"crowd_level": crowd_level(r["occupancy_percentage"] or 0)} for r in rows]
+    payload = []
+    for index, row in enumerate(rows):
+        item = row_to_dict(row)
+        item.update(simulate_location(item["route_number"], item["bus_id"]))
+        item["eta_minutes"] = 6 + (index * 4)
+        item["crowd_level"] = crowd_level(item["occupancy_percentage"] or 0)
+        item["bus_utilization_score"] = bus_utilization_score(item["occupancy_percentage"] or 0)
+        payload.append(item)
     return jsonify(payload)
 
 
@@ -145,11 +143,11 @@ def stats():
     avg_occ = round(mean([r["occupancy_percentage"] for r in records]), 2) if records else 0
     return jsonify({
         "average_occupancy": avg_occ,
-        "bus_utilization_score": round(min(avg_occ / 85 * 100, 100), 2),
+        "bus_utilization_score": bus_utilization_score(avg_occ),
         "route_statistics": [row_to_dict(r) for r in route_rows],
         "overcrowding_alerts": overcrowded,
         "underutilized_buses": underused,
-        **savings(records),
+        **estimate_savings(records),
     })
 
 
@@ -169,6 +167,42 @@ def recommendations():
         else:
             recs.append({"route_number": route["route_number"], "action": "Maintain current schedule", "priority": "Low"})
     return jsonify(recs)
+
+
+@app.route("/api/demand")
+def demand():
+    with get_db() as conn:
+        records = [row_to_dict(r) for r in conn.execute("SELECT * FROM occupancy_records ORDER BY timestamp").fetchall()]
+    return jsonify([insight.to_dict() for insight in predict_demand(records)])
+
+
+@app.route("/api/locations")
+def locations():
+    with get_db() as conn:
+        buses_rows = [row_to_dict(r) for r in conn.execute("SELECT bus_id, route_number FROM buses ORDER BY route_number, bus_id").fetchall()]
+    return jsonify([simulate_location(row["route_number"], row["bus_id"]) for row in buses_rows])
+
+
+@app.route("/api/recommend-buses")
+def recommend_buses():
+    route_number = request.args.get("route_number")
+    limit = int(request.args.get("limit", 3))
+    with get_db() as conn:
+        rows = conn.execute(
+            """SELECT b.*, r.timestamp, r.latitude, r.longitude, r.passenger_count,
+                      r.occupancy_percentage, r.seat_availability
+               FROM buses b
+               LEFT JOIN occupancy_records r ON r.id = (
+                   SELECT id FROM occupancy_records WHERE bus_id = b.bus_id ORDER BY timestamp DESC LIMIT 1
+               )"""
+        ).fetchall()
+    buses_payload = []
+    for index, row in enumerate(rows):
+        item = row_to_dict(row)
+        item.update(simulate_location(item["route_number"], item["bus_id"]))
+        item["eta_minutes"] = 6 + (index * 4)
+        buses_payload.append(item)
+    return jsonify(recommend_less_crowded_buses(buses_payload, route_number, limit))
 
 
 if __name__ == "__main__":
