@@ -205,6 +205,44 @@ def recommend_buses():
     return jsonify(recommend_less_crowded_buses(buses_payload, route_number, limit))
 
 
+ codex/build-bussense-ai-prototype-project-mqmve9
+@app.route("/api/favorites", methods=["GET", "POST"])
+def favorites():
+    if request.method == "POST":
+        data = request.get_json(force=True)
+        with get_db() as conn:
+            conn.execute(
+                "INSERT INTO favorites (favorite_type, favorite_value) VALUES (?, ?)",
+                (data.get("favorite_type", "route"), data.get("favorite_value", "")),
+            )
+        return jsonify({"message": "favorite saved"}), 201
+    with get_db() as conn:
+        rows = [row_to_dict(r) for r in conn.execute("SELECT * FROM favorites ORDER BY created_at DESC LIMIT 50").fetchall()]
+    return jsonify(rows)
+
+
+@app.route("/api/report", methods=["POST", "GET"])
+def report():
+    if request.method == "GET":
+        with get_db() as conn:
+            rows = [row_to_dict(r) for r in conn.execute("SELECT * FROM passenger_reports ORDER BY created_at DESC LIMIT 50").fetchall()]
+        return jsonify(rows)
+    data = request.get_json(silent=True) or {}
+    with get_db() as conn:
+        conn.execute(
+            """INSERT INTO passenger_reports (bus_id, report_type, message, latitude, longitude)
+               VALUES (?, ?, ?, ?, ?)""",
+            (
+                data.get("bus_id"),
+                data.get("report_type", "passenger_report"),
+                data.get("message", "Submitted from passenger app"),
+                data.get("latitude"),
+                data.get("longitude"),
+            ),
+        )
+    return jsonify({"message": "report submitted"}), 201
+
+ main
 if __name__ == "__main__":
     init_db(seed=True)
     app.run(debug=True, host="0.0.0.0", port=5000)

@@ -1,1 +1,100 @@
+codex/build-bussense-ai-prototype-project-mqmve9
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>BusSense AI Passenger App</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow" data-i18n="appName">BusSense AI Passenger App</p>
+        <h1 data-i18n="tagline">Choose the smartest bus now</h1>
+        <p class="muted"><span id="currentTime">--:--</span> · <span id="userLocation">Detecting location…</span></p>
+      </div>
+      <button id="themeToggle" class="icon-button" aria-label="Toggle dark mode">🌙</button>
+    </header>
+
+    <nav class="tabbar" aria-label="Passenger app sections">
+      <button class="tab active" data-page="home">Home</button>
+      <button class="tab" data-page="live">Live</button>
+      <button class="tab" data-page="recommendations">AI Picks</button>
+      <button class="tab" data-page="sustainability">Eco</button>
+      <button class="tab" data-page="profile">Profile</button>
+    </nav>
+
+    <main>
+      <section id="page-home" class="page active-page"></section>
+      <section id="page-live" class="page"></section>
+      <section id="page-recommendations" class="page"></section>
+      <section id="page-sustainability" class="page"></section>
+      <section id="page-profile" class="page"></section>
+      <section id="page-history" class="page"></section>
+    </main>
+  </div>
+
+  <template id="home-template">
+    <section class="hero-card">
+      <label>Source</label>
+      <input id="sourceInput" placeholder="Current location or stop name" value="Thampanoor">
+      <label>Destination</label>
+      <input id="destinationInput" placeholder="Where are you going?" value="Technopark">
+      <button id="searchButton" class="primary">Find less-crowded buses</button>
+    </section>
+    <section class="quick-grid">
+      <article class="metric"><span>Nearby buses</span><strong id="nearbyCount">0</strong></article>
+      <article class="metric"><span>Best comfort</span><strong id="bestComfort">--</strong></article>
+      <article class="metric"><span>Seat chance</span><strong id="seatChance">--</strong></article>
+    </section>
+    <section class="panel"><h2>Nearby buses</h2><div id="nearbyBuses" class="card-list"></div></section>
+    <section class="panel"><h2>Live tracking</h2><div id="mobileMap"></div></section>
+  </template>
+
+  <template id="live-template">
+    <section class="panel"><h2>Live Bus Occupancy</h2><div id="liveBusList" class="card-list"></div></section>
+    <section class="panel"><h2>Occupancy Trend</h2><canvas id="occupancyTrend"></canvas></section>
+  </template>
+
+  <template id="recommendations-template">
+    <section class="panel"><h2>Smart Recommendations</h2><div id="recommendationList" class="card-list"></div></section>
+    <section class="panel"><h2>Alternative buses</h2><div id="alternativeList" class="card-list"></div></section>
+  </template>
+
+  <template id="sustainability-template">
+    <section class="hero-card eco"><h2>Your impact</h2><p>Public transport reduces private vehicle trips and improves fleet utilization.</p></section>
+    <section class="quick-grid">
+      <article class="metric"><span>CO₂ saved</span><strong id="co2Saved">-- kg</strong></article>
+      <article class="metric"><span>Fuel saved</span><strong id="fuelSaved">-- L</strong></article>
+      <article class="metric"><span>Trips</span><strong id="ecoTrips">0</strong></article>
+    </section>
+    <section class="panel"><h2>Environmental statistics</h2><canvas id="ecoChart"></canvas></section>
+  </template>
+
+  <template id="profile-template">
+    <section class="profile-card"><div class="avatar">A</div><div><h2 id="profileName">Anu Passenger</h2><p id="profileStats">0 trips · 0 kg CO₂ saved</p></div></section>
+    <section class="panel"><h2>Favorites</h2><div class="favorite-actions"><button id="saveRoute">Save route</button><button id="saveBus">Save best bus</button><button id="saveDestination">Save destination</button></div><div id="favoritesList" class="chips"></div></section>
+    <section class="panel"><h2>Accessibility</h2><div class="settings-grid"><label><input type="checkbox" id="largeTextToggle"> Large text</label><label><input type="checkbox" id="contrastToggle"> High contrast</label><label><input type="checkbox" id="voiceToggle"> Voice announcements</label><label>Language <select id="languageSelect"><option value="en">English</option><option value="ml">Malayalam</option></select></label></div></section>
+    <section class="panel emergency"><h2>Emergency & Reports</h2><button id="shareLocation">Share live bus location</button><button id="callEmergency">Emergency contact</button><button id="reportCrowding">Report overcrowding</button><button id="reportIssue">Report service issue</button></section>
+    <section class="panel"><h2>Travel history</h2><div id="historyList" class="card-list"></div><button class="secondary" data-page-link="history">Open detailed history</button></section>
+  </template>
+
+  <template id="history-template">
+    <section class="panel"><h2>Recent searches</h2><div id="searchHistory" class="card-list"></div></section>
+    <section class="panel"><h2>Last viewed buses</h2><div id="viewedHistory" class="card-list"></div></section>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>
+=======
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>BusSense Passenger App</title><link rel="stylesheet" href="styles.css"></head><body><main><h1>BusSense Passenger</h1><p>Choose less-crowded buses and reduce waiting emissions.</p><section id="busCards"></section></main><script src="app.js"></script></body></html>
+ main

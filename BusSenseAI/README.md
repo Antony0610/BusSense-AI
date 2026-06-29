@@ -26,7 +26,8 @@ BusSenseAI/
 - Privacy-friendly processing: person-class counting only; no facial recognition, biometric templates, or identity storage.
 - Flask backend with SQLite for bus metadata, GPS-tagged occupancy records, route stats, demand prediction, recommendations, and sustainability metrics.
 - Real-time authority dashboard with live bus table, route occupancy charts, demand prediction chart, overcrowding alerts, less-crowded bus suggestions, and an interactive Leaflet/OpenStreetMap live bus map.
-- Passenger mobile web app with Green/Yellow/Red crowd level, ETA, live location, seat availability prediction, and less-crowded alternatives.
+- Modern BusSense AI Passenger App with source/destination search, nearby buses, Green/Yellow/Red crowd indicators, ETA, live location, seat probability, less-crowded alternatives, favorites, notifications, 
+  travel history, accessibility controls, Malayalam/English language toggle, sustainability screen, user profile, emergency actions, and passenger reporting.
 - Random Forest demand prediction when `scikit-learn` is installed, with a moving-average fallback for easy classroom execution.
 - Deterministic GPS simulator for live bus movement demos.
 - Fuel savings, CO₂ reduction, and Bus Utilization Score modules.
@@ -79,6 +80,33 @@ python occupancy_detection/detect_occupancy.py datasets/sample_bus_cctv.mp4 --ca
 
 Both detectors return `passenger_count`, `occupancy_percentage`, and `seat_availability`. For production use, validate YOLO on local bus CCTV angles and run inference on an edge device that sends only aggregate counts to the backend.
 
+codex/build-bussense-ai-prototype-project-mqmve9
+
+## Passenger Mobile App
+
+The passenger-facing prototype lives in `mobile_app/` and runs as a mobile-first web app with Material-inspired cards, dark/light mode, high-contrast mode, large text mode, and voice announcements. It consumes the existing Flask APIs and falls back to sample data if the API is unavailable.
+
+```text
+mobile_app/
+├── index.html
+├── styles.css
+├── app.js
+├── pages/
+│   ├── home.html
+│   ├── live_buses.html
+│   ├── recommendations.html
+│   ├── sustainability.html
+│   ├── profile.html
+│   └── history.html
+├── assets/
+│   ├── icons/
+│   └── images/
+└── docs/
+```
+
+Open `mobile_app/index.html` while the Flask backend is running to view live bus occupancy, AI recommendations, Leaflet tracking, sustainability stats, favorites, profile, emergency actions, and travel history.
+
+main
 ## API Endpoints
 
 | Method | Endpoint | Purpose |
@@ -93,6 +121,10 @@ Both detectors return `passenger_count`, `occupancy_percentage`, and `seat_avail
 | GET | `/api/locations` | Simulated live GPS locations |
 | GET | `/api/recommend-buses?route_number=R1` | Less-crowded passenger bus recommendations |
 | GET | `/api/recommendations` | Authority route optimization recommendations |
+
+codex/build-bussense-ai-prototype-project-mqmve9
+| GET/POST | `/api/favorites` | Save and list passenger favorite routes, buses, and destinations |
+| GET/POST | `/api/report` | Submit or view passenger reports for overcrowding/service issues |
 
 Example POST from detector output:
 
