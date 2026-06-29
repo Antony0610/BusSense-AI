@@ -1,0 +1,8 @@
+services:
+  bussense-ai:
+    build: .
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./database:/app/database
+      - ./datasets:/app/datasets

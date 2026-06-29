@@ -1,0 +1,5 @@
+.venv/
+__pycache__/
+*.py[cod]
+database/*.db
+reports/latest_occupancy.json
