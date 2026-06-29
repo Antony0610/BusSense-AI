@@ -205,6 +205,7 @@ def recommend_buses():
     return jsonify(recommend_less_crowded_buses(buses_payload, route_number, limit))
 
 
+ codex/build-bussense-ai-prototype-project-mqmve9
 @app.route("/api/favorites", methods=["GET", "POST"])
 def favorites():
     if request.method == "POST":
@@ -241,7 +242,7 @@ def report():
         )
     return jsonify({"message": "report submitted"}), 201
 
-
+ main
 if __name__ == "__main__":
     init_db(seed=True)
     app.run(debug=True, host="0.0.0.0", port=5000)
