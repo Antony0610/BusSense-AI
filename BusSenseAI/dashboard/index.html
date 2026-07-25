@@ -2,52 +2,238 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>BusSense AI Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BusSense AI - Transport Authority Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <link rel="stylesheet" href="styles.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
-<body>
-  <header>
-    <h1>BusSense AI Authority Dashboard</h1>
-    <p>Real-time climate-smart occupancy monitoring for KSRTC and private buses.</p>
-  </header>
-  <main>
-    <section class="cards" id="metrics"></section>
-    <section class="grid two">
-      <div>
-        <h2>Interactive Live Bus Map</h2>
-        <div id="map"></div>
+<body class="theme-dark">
+  <div class="app-layout">
+    <!-- Top Navigation Header -->
+    <header class="navbar">
+      <div class="brand">
+        <div class="logo-icon">🚍</div>
+        <div>
+          <div class="brand-title">BusSense <span class="badge-ai">AI</span></div>
+          <div class="brand-subtitle">Public & Private Bus Fleet Occupancy Control Center</div>
+        </div>
       </div>
-      <div>
-        <h2>Demand Prediction</h2>
-        <canvas id="demandChart"></canvas>
+
+      <div class="header-status">
+        <span class="pulse-indicator"></span>
+        <span class="status-text">LIVE STREAM ACTIVE</span>
+        <span class="last-update" id="lastUpdated">Updated just now</span>
       </div>
-    </section>
-    <section>
-      <h2>Live Bus List</h2>
-      <table>
-        <thead><tr><th>Bus</th><th>Route</th><th>Operator</th><th>Passengers</th><th>Occupancy</th><th>Seats</th><th>Score</th><th>Status</th></tr></thead>
-        <tbody id="busRows"></tbody>
-      </table>
-    </section>
-    <section class="grid two">
-      <div>
-        <h2>Route-wise Historical Occupancy</h2>
-        <canvas id="routeChart"></canvas>
+
+      <div class="header-actions">
+        <button id="themeToggle" class="btn-icon" title="Toggle Light/Dark Theme">🌙</button>
+        <button id="exportCsvBtn" class="btn btn-secondary">
+          <span class="icon">📊</span> Export CSV
+        </button>
+        <button id="dispatchModalBtn" class="btn btn-primary">
+          <span class="icon">⚡</span> Dispatch Bus
+        </button>
       </div>
-      <div>
-        <h2>Overcrowding Alerts</h2>
-        <ul id="alerts"></ul>
-        <h2>Less-Crowded Bus Recommendations</h2>
-        <ul id="busRecommendations"></ul>
-        <h2>Route Optimization Recommendations</h2>
-        <ul id="recommendations"></ul>
+    </header>
+
+    <!-- Main Dashboard Container -->
+    <main class="dashboard-body">
+      <!-- KPI Executive Metrics Grid -->
+      <section class="kpi-grid">
+        <article class="kpi-card teal">
+          <div class="kpi-icon">📊</div>
+          <div class="kpi-data">
+            <span class="kpi-label">Average Fleet Occupancy</span>
+            <strong class="kpi-value" id="kpiAvgOcc">0%</strong>
+            <span class="kpi-subtext">Target: 70% - 85% optimal</span>
+          </div>
+        </article>
+
+        <article class="kpi-card indigo">
+          <div class="kpi-icon">🎯</div>
+          <div class="kpi-data">
+            <span class="kpi-label">Bus Utilization Score</span>
+            <strong class="kpi-value" id="kpiUtilScore">0</strong>
+            <span class="kpi-subtext">Fleet Efficiency Index (0-100)</span>
+          </div>
+        </article>
+
+        <article class="kpi-card green">
+          <div class="kpi-icon">🌱</div>
+          <div class="kpi-data">
+            <span class="kpi-label">CO₂ Emissions Reduced</span>
+            <strong class="kpi-value" id="kpiCo2">0 kg</strong>
+            <span class="kpi-subtext">Estimated environmental savings</span>
+          </div>
+        </article>
+
+        <article class="kpi-card amber">
+          <div class="kpi-icon">⛽</div>
+          <div class="kpi-data">
+            <span class="kpi-label">Fuel Saved</span>
+            <strong class="kpi-value" id="kpiFuel">0 L</strong>
+            <span class="kpi-subtext">Diesel efficiency gain</span>
+          </div>
+        </article>
+
+        <article class="kpi-card rose">
+          <div class="kpi-icon">⚠️</div>
+          <div class="kpi-data">
+            <span class="kpi-label">Overcrowding Alerts</span>
+            <strong class="kpi-value" id="kpiAlertCount">0</strong>
+            <span class="kpi-subtext">Buses at >85% capacity</span>
+          </div>
+        </article>
+      </section>
+
+      <!-- Map and Predictive Demand Section -->
+      <section class="grid-dual">
+        <div class="panel map-panel">
+          <div class="panel-header">
+            <div>
+              <h2 class="panel-title">Interactive Live Bus Map</h2>
+              <p class="panel-subtitle">Real-time GPS coordinates and crowding status across KSRTC & Private routes</p>
+            </div>
+            <div class="map-legend">
+              <span class="legend-item"><span class="dot green"></span> &lt;55% (Green)</span>
+              <span class="legend-item"><span class="dot yellow"></span> 55-80% (Yellow)</span>
+              <span class="legend-item"><span class="dot red"></span> &gt;80% (Red)</span>
+            </div>
+          </div>
+          <div id="map" class="map-container"></div>
+        </div>
+
+        <div class="panel chart-panel">
+          <div class="panel-header">
+            <div>
+              <h2 class="panel-title">AI Demand Forecasting</h2>
+              <p class="panel-subtitle">Random Forest predicted passenger demand for peak hours</p>
+            </div>
+          </div>
+          <div class="chart-wrapper">
+            <canvas id="demandChart"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- Filter Controls & Fleet Table -->
+      <section class="panel fleet-panel">
+        <div class="panel-header flex-between">
+          <div>
+            <h2 class="panel-title">Live Bus Fleet Directory</h2>
+            <p class="panel-subtitle">Filter and monitor active buses, seat availability, and operator details</p>
+          </div>
+
+          <div class="filter-controls">
+            <div class="pill-group" id="operatorFilter">
+              <button class="pill-btn active" data-filter="ALL">All Operators</button>
+              <button class="pill-btn" data-filter="KSRTC">KSRTC State</button>
+              <button class="pill-btn" data-filter="PRIVATE">Private Operators</button>
+            </div>
+
+            <div class="search-box">
+              <span class="search-icon">🔍</span>
+              <input type="text" id="busSearchInput" placeholder="Search by Bus ID or Route..." />
+            </div>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="fleet-table">
+            <thead>
+              <tr>
+                <th>Bus ID</th>
+                <th>Operator</th>
+                <th>Route</th>
+                <th>Passengers</th>
+                <th>Occupancy Gauge</th>
+                <th>Seats Free</th>
+                <th>Score</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="busRows">
+              <tr><td colspan="9" class="text-center py-4">Loading real-time fleet data...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Analytics Charts & Intelligence Center -->
+      <section class="grid-dual">
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">Route-wise Historical Occupancy</h2>
+            <p class="panel-subtitle">Average occupancy percentage per transit corridor</p>
+          </div>
+          <div class="chart-wrapper">
+            <canvas id="routeChart"></canvas>
+          </div>
+        </div>
+
+        <div class="panel intelligence-panel">
+          <div class="panel-header">
+            <h2 class="panel-title">Fleet Control & Recommendations</h2>
+            <p class="panel-subtitle">Automated dispatch actions and passenger report insights</p>
+          </div>
+
+          <div class="intelligence-grid">
+            <div class="intel-block">
+              <h3>🚨 Overcrowding Alerts</h3>
+              <ul id="alerts" class="intel-list"></ul>
+            </div>
+
+            <div class="intel-block">
+              <h3>💡 Route Optimization AI Recommendations</h3>
+              <ul id="recommendations" class="intel-list"></ul>
+            </div>
+
+            <div class="intel-block">
+              <h3>📢 Passenger Feedback Feed</h3>
+              <ul id="passengerReports" class="intel-list"></ul>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Dispatch Modal -->
+  <div id="dispatchModal" class="modal-overlay hidden">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Dispatch Extra Service Bus</h3>
+        <button id="closeModalBtn" class="close-btn">&times;</button>
       </div>
-    </section>
-  </main>
+      <form id="dispatchForm" class="modal-form">
+        <label>Route Number</label>
+        <select id="dispatchRouteSelect">
+          <option value="R1">Route R1 (Thampanoor - Technopark)</option>
+          <option value="R2">Route R2 (East Fort - Kovalam)</option>
+          <option value="R3">Route R3 (Pattam - Kazhakoottam)</option>
+          <option value="R4">Route R4 (Central - Medical College)</option>
+        </select>
+
+        <label>Operator Type</label>
+        <select id="dispatchOperatorSelect">
+          <option value="KSRTC">KSRTC State Bus</option>
+          <option value="PRIVATE">Private Bus Operator</option>
+        </select>
+
+        <div class="modal-actions">
+          <button type="button" id="cancelDispatchBtn" class="btn btn-secondary">Cancel</button>
+          <button type="submit" class="btn btn-primary">Dispatch Bus Now</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script src="app.js"></script>
 </body>
 </html>

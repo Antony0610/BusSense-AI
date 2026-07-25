@@ -1,0 +1,35 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/index.py",
+      "use": "@vercel/python"
+    },
+    {
+      "src": "dashboard/**",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "mobile_app/**",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "api/index.py"
+    },
+    {
+      "src": "/dashboard/(.*)",
+      "dest": "dashboard/$1"
+    },
+    {
+      "src": "/mobile_app/(.*)",
+      "dest": "mobile_app/$1"
+    },
+    {
+      "src": "/",
+      "dest": "dashboard/index.html"
+    }
+  ]
+}

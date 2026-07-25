@@ -25,8 +25,6 @@ CREATE TABLE IF NOT EXISTS occupancy_records (
 
 CREATE INDEX IF NOT EXISTS idx_occupancy_bus_time ON occupancy_records(bus_id, timestamp);
 CREATE INDEX IF NOT EXISTS idx_occupancy_route_time ON occupancy_records(route_number, timestamp);
-codex/build-bussense-ai-prototype-project-mqmve9
-
 
 CREATE TABLE IF NOT EXISTS favorites (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -44,4 +42,4 @@ CREATE TABLE IF NOT EXISTS passenger_reports (
     longitude REAL,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
-main
+

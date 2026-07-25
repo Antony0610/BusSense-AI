@@ -14,31 +14,48 @@ import cv2
 
 
 def estimate_occupancy(video_path: str, capacity: int, sample_every: int = 15, display: bool = False) -> dict:
-    detector = cv2.HOGDescriptor()
-    detector.setSVMDetector(cv2.HOGDescriptor_getDefaultPeopleDetector())
+    HOG = getattr(cv2, 'HOGDescriptor', None) or getattr(getattr(cv2, 'objdetect', None), 'HOGDescriptor', None)
+    if HOG:
+        detector = HOG()
+        detector.setSVMDetector(HOG.getDefaultPeopleDetector() if hasattr(HOG, 'getDefaultPeopleDetector') else HOG_getDefaultPeopleDetector())
+    else:
+        detector = None
+
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
         raise FileNotFoundError(f"Unable to open video: {video_path}")
 
     frame_index = 0
     counts: list[int] = []
+    bg_subtractor = cv2.createBackgroundSubtractorMOG2(history=500, varThreshold=50, detectShadows=False)
+
     while True:
         ok, frame = cap.read()
         if not ok:
             break
         if frame_index % sample_every == 0:
             resized = cv2.resize(frame, (640, 360))
-            boxes, _weights = detector.detectMultiScale(resized, winStride=(8, 8), padding=(8, 8), scale=1.05)
-            passenger_count = len(boxes)
+            if detector is not None:
+                try:
+                    boxes, _ = detector.detectMultiScale(resized, winStride=(8, 8), padding=(8, 8), scale=1.05)
+                    passenger_count = len(boxes)
+                except Exception:
+                    fg = bg_subtractor.apply(resized)
+                    contours, _ = cv2.findContours(fg, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                    passenger_count = len([c for c in contours if cv2.contourArea(c) > 300])
+            else:
+                fg = bg_subtractor.apply(resized)
+                contours, _ = cv2.findContours(fg, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                passenger_count = len([c for c in contours if cv2.contourArea(c) > 300])
+
             counts.append(passenger_count)
             if display:
-                for (x, y, w, h) in boxes:
-                    cv2.rectangle(resized, (x, y), (x + w, y + h), (0, 180, 0), 2)
                 cv2.putText(resized, f"Passengers: {passenger_count}", (20, 35), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 180, 0), 2)
                 cv2.imshow("BusSense AI Occupancy", resized)
                 if cv2.waitKey(1) & 0xFF == ord("q"):
                     break
         frame_index += 1
+
 
     cap.release()
     if display:

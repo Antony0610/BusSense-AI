@@ -3,3 +3,16 @@ __pycache__/
 *.py[cod]
 database/*.db
 reports/latest_occupancy.json
+
+# Flutter
+mobile_app_flutter/.dart_tool/
+mobile_app_flutter/.flutter-plugins
+mobile_app_flutter/.flutter-plugins-dependencies
+mobile_app_flutter/build/
+mobile_app_flutter/.pub-cache/
+mobile_app_flutter/.pub/
+
+# IDE & OS
+.DS_Store
+.idea/
+*.swp

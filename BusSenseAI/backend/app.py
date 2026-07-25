@@ -12,11 +12,17 @@ from gps_simulator import simulate_location
 from recommendation import crowd_level, recommend_less_crowded_buses
 from sustainability import bus_utilization_score, estimate_savings
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 
+import os
+
 ROOT = Path(__file__).resolve().parents[1]
-DB_PATH = ROOT / "database" / "bussense.db"
+if os.environ.get("VERCEL") or not os.access(str(ROOT / "database"), os.W_OK):
+    DB_PATH = Path("/tmp/bussense.db")
+else:
+    DB_PATH = ROOT / "database" / "bussense.db"
+
 SCHEMA_PATH = ROOT / "database" / "schema.sql"
 DATASET_PATH = ROOT / "datasets" / "sample_occupancy.csv"
 
@@ -24,7 +30,21 @@ app = Flask(__name__, static_folder=str(ROOT / "dashboard"), static_url_path="/d
 CORS(app)
 
 
+@app.route("/mobile_app/<path:filename>")
+@app.route("/app/<path:filename>")
+def serve_mobile_app(filename):
+    return send_from_directory(ROOT / "mobile_app", filename)
+
+
+@app.route("/mobile_app/")
+@app.route("/app/")
+def serve_mobile_app_index():
+    return send_from_directory(ROOT / "mobile_app", "index.html")
+
+
 def get_db() -> sqlite3.Connection:
+    if not DB_PATH.exists():
+        init_db(seed=True)
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
@@ -205,7 +225,6 @@ def recommend_buses():
     return jsonify(recommend_less_crowded_buses(buses_payload, route_number, limit))
 
 
- codex/build-bussense-ai-prototype-project-mqmve9
 @app.route("/api/favorites", methods=["GET", "POST"])
 def favorites():
     if request.method == "POST":
@@ -242,7 +261,34 @@ def report():
         )
     return jsonify({"message": "report submitted"}), 201
 
- main
+@app.route("/api/dispatch", methods=["POST"])
+def dispatch():
+    data = request.get_json(silent=True) or {}
+    route_number = data.get("route_number", "R1")
+    operator = data.get("operator_type", "KSRTC")
+    
+    with get_db() as conn:
+        count = conn.execute("SELECT COUNT(*) FROM buses WHERE route_number = ?", (route_number,)).fetchone()[0]
+        new_id = f"{operator}-EXTRA-{count+1}"
+        conn.execute(
+            """INSERT OR IGNORE INTO buses (bus_id, operator_type, route_number, capacity, registration_number)
+               VALUES (?, ?, ?, 50, ?)""",
+            (new_id, operator, route_number, f"KL-01-EX-{count+1:02d}")
+        )
+        conn.execute(
+            """INSERT INTO occupancy_records (bus_id, route_number, timestamp, latitude, longitude, passenger_count, occupancy_percentage, seat_availability, source)
+               VALUES (?, ?, ?, 8.5241, 76.9366, 10, 20.0, 40, 'authority_dispatch')""",
+            (new_id, route_number, datetime.now(timezone.utc).isoformat())
+        )
+    return jsonify({
+        "message": f"Dispatched extra {operator} bus {new_id} to Route {route_number}",
+        "bus_id": new_id,
+        "route_number": route_number
+    }), 201
+
+
 if __name__ == "__main__":
     init_db(seed=True)
-    app.run(debug=True, host="0.0.0.0", port=5000)
+    app.run(debug=False, use_reloader=False, host="0.0.0.0", port=5000)
+
+
