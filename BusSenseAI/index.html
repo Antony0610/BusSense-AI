@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BusSense AI - Climate-Smart Public Transit Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0b1720;
+      --surface: #12232e;
+      --primary: #00796b;
+      --primary-accent: #26a69a;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      background-image: radial-gradient(circle at 50% 20%, rgba(38, 166, 154, 0.15), transparent 70%);
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 28px;
+      padding: 3rem 2.5rem;
+      max-width: 540px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    }
+    .badge {
+      display: inline-block;
+      background: rgba(38, 166, 154, 0.2);
+      color: var(--primary-accent);
+      border: 1px solid rgba(38, 166, 154, 0.4);
+      padding: 0.35rem 0.9rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 1.2rem;
+    }
+    h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 2.2rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.75rem;
+    }
+    p {
+      color: var(--muted);
+      font-size: 0.95rem;
+      line-height: 1.6;
+      margin-bottom: 2rem;
+    }
+    .actions {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.6rem;
+      padding: 1rem 1.5rem;
+      border-radius: 16px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), var(--primary-accent));
+      color: #ffffff;
+      box-shadow: 0 8px 20px rgba(0, 121, 107, 0.35);
+    }
+    .btn-secondary {
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+    .btn:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.1);
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="badge">🚍 BusSense AI Portal</div>
+    <h1>Climate-Smart Mobility</h1>
+    <p>AI-powered passenger crowding analytics, Random Forest demand forecasting, and real-time fleet management.</p>
+    <div class="actions">
+      <a href="/dashboard/index.html" class="btn btn-primary">📊 Open Authority Control Dashboard</a>
+      <a href="/mobile_app/index.html" class="btn btn-secondary">📱 Open Passenger App Simulator</a>
+      <a href="/api/health" class="btn btn-secondary">⚡ Check API Health Status</a>
+    </div>
+  </div>
+</body>
+</html>
