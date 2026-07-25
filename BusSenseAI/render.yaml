@@ -3,8 +3,8 @@ services:
     name: bussense-ai
     runtime: python
     rootDir: .
-    buildCommand: pip install -r requirements.txt
-    startCommand: python backend/app.py
+    buildCommand: pip install -r requirements.txt || pip install -r backend/requirements.txt || pip install -r api/requirements.txt
+    startCommand: python backend/app.py || python app.py
     envVars:
       - key: PORT
         value: 5000
