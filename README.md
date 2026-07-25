@@ -254,6 +254,4 @@ BusSenseAI/
 
 ## 📄 License
 
-Distributed under the MIT License. See `LICENSE` for details.
-
-Developed with ❤️ for **Climate-Smart Public Mobility**.*Climate-Smart Public Mobility**.
+Developed and maintained by Antony0610. Distributed under the MIT License.
