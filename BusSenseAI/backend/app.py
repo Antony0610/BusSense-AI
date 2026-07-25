@@ -69,7 +69,9 @@ def row_to_dict(row: sqlite3.Row) -> dict:
 
 def init_db(seed: bool = True) -> None:
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    with get_db() as conn:
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    with conn:
         conn.executescript(SCHEMA_PATH.read_text())
         if seed and conn.execute("SELECT COUNT(*) FROM buses").fetchone()[0] == 0:
             with DATASET_PATH.open(newline="") as fh:
