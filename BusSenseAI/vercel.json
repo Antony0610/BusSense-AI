@@ -1,35 +1,12 @@
 {
-  "version": 2,
-  "builds": [
+  "rewrites": [
     {
-      "src": "api/index.py",
-      "use": "@vercel/python"
+      "source": "/api/(.*)",
+      "destination": "/api/index.py"
     },
     {
-      "src": "dashboard/**",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "mobile_app/**",
-      "use": "@vercel/static"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "api/index.py"
-    },
-    {
-      "src": "/dashboard/(.*)",
-      "dest": "dashboard/$1"
-    },
-    {
-      "src": "/mobile_app/(.*)",
-      "dest": "mobile_app/$1"
-    },
-    {
-      "src": "/",
-      "dest": "dashboard/index.html"
+      "source": "/",
+      "destination": "/dashboard/index.html"
     }
   ]
 }
