@@ -96,6 +96,8 @@ def init_db(seed: bool = True) -> None:
 
 @app.route("/")
 def index():
+    if (ROOT / "index.html").exists():
+        return send_from_directory(ROOT, "index.html")
     return jsonify({"name": "BusSense AI", "dashboard": "/dashboard/index.html", "health": "/api/health"})
 
 
