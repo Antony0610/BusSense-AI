@@ -252,6 +252,8 @@ BusSenseAI/
 
 ---
 
-## 📄 License
+## 📄 License & Maintainer
 
-Developed and maintained by Antony0610. Distributed under the MIT License.
+Developed and maintained with ❤️ by **[Antony0610](https://github.com/Antony0610)**.
+
+Distributed under the **MIT License**. See `LICENSE` for details.
