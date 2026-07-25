@@ -30,6 +30,17 @@ app = Flask(__name__, static_folder=str(ROOT / "dashboard"), static_url_path="/d
 CORS(app)
 
 
+@app.route("/dashboard/")
+@app.route("/dashboard")
+def serve_dashboard_index():
+    return send_from_directory(ROOT / "dashboard", "index.html")
+
+
+@app.route("/dashboard/<path:filename>")
+def serve_dashboard_files(filename):
+    return send_from_directory(ROOT / "dashboard", filename)
+
+
 @app.route("/mobile_app/<path:filename>")
 @app.route("/app/<path:filename>")
 def serve_mobile_app(filename):
@@ -37,7 +48,9 @@ def serve_mobile_app(filename):
 
 
 @app.route("/mobile_app/")
+@app.route("/mobile_app")
 @app.route("/app/")
+@app.route("/app")
 def serve_mobile_app_index():
     return send_from_directory(ROOT / "mobile_app", "index.html")
 
