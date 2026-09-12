@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>BusSense AI - Kerala Climate-Smart Intelligent Transit Grid</title>
+  
+  <!-- Leaflet Dark Matter Mapping (100% Free FOSS) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  
+  <!-- QR Code Generator (100% Free MIT) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <!-- Supabase Cloud JS SDK v2 (100% Direct Cloud Backend) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Obsidian Cyber-Transit Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- TOP NAVIGATION HUD -->
+  <header class="top-navbar" id="topNavbar">
+    <div class="brand-container" id="brandHomeBtn" style="cursor: pointer;" title="Go to Home Portal">
+      <div class="brand-icon">
+        <img src="assets/logo.png" alt="BusSense AI" style="width: 28px; height: 28px; border-radius: 6px; object-fit: cover;">
+      </div>
+      <div>
+        <div class="brand-title">BusSense <span class="ai-tag">AI</span></div>
+      </div>
+      <span class="brand-badge" id="hudSystemStatus">● SUPABASE CLOUD ACTIVE</span>
+    </div>
+
+    <div class="nav-controls">
+      <!-- English / Malayalam Switcher -->
+      <button class="lang-toggle-btn" id="langToggleBtn" title="Switch Language">
+        🌐 <span id="langLabel">മലയാളം</span>
+      </button>
+
+      <!-- Current Role / Profile Indicator -->
+      <div class="user-profile-badge" id="currentUserBadge" style="display: flex; align-items: center; gap: 8px; background: rgba(0, 240, 255, 0.08); border: 1px solid var(--border-glass); border-radius: 20px; padding: 4px 12px; font-size: 0.75rem;">
+        <span id="userBadgeIcon">🚶</span>
+        <span id="userBadgeText" style="font-weight: 700; color: #FFF;">Guest Commuter</span>
+      </div>
+
+      <!-- Quick Portal Switcher / Exit -->
+      <button class="nav-icon-btn" id="navGatewayBtn" title="Switch Portal">
+        🔄
+      </button>
+    </div>
+  </header>
+
+  <!-- =======================================================
+       ROUTED SCREENS CONTAINER (Declarative Router)
+       ======================================================= -->
+  <main class="app-viewport">
+
+    <!-- SCREEN 1: ROOT GATEWAY PORTAL (#/) -->
+    <section class="screen-view active" id="screenGateway">
+      <div class="gateway-container">
+        
+        <div class="gateway-hero">
+          <div class="hero-logo-box">
+            <img src="assets/logo.png" alt="BusSense Logo" class="hero-logo-img">
+          </div>
+          <div class="hero-pill-badge">🌱 KERALA CLIMATE-SMART TRANSIT NETWORK</div>
+          <h1 class="hero-title">Next-Gen Intelligent <span class="glow-text">Transit Grid</span></h1>
+          <p class="hero-subtitle">
+            Autonomous fleet crowd tracking, atomic seat reservation with 20% off-peak green savings, and instant emergency triage — powered 100% by Supabase Cloud PostGIS.
+          </p>
+        </div>
+
+        <!-- Split Gateway Portal Cards -->
+        <div class="portal-cards-grid">
+          
+          <!-- Commuter Portal Card -->
+          <div class="portal-card passenger" id="portalCommuterCard">
+            <div class="card-glow-pill">COMMUTER COMMODITY</div>
+            <div class="portal-card-header">
+              <div class="portal-icon cyan">🚶‍♂️</div>
+              <div>
+                <h3 class="portal-title">Passenger Portal</h3>
+                <span class="portal-subtitle">KSRTC & Private Bus Commuter</span>
+              </div>
+            </div>
+            <ul class="portal-features-list">
+              <li><span>📡</span> Live GPS Radar & Kerala Route Tracking</li>
+              <li><span>👥</span> Edge YOLOv8 AI Crowding Telemetry</li>
+              <li><span>🌱</span> 20% Off-Peak Green Transit Discounts</li>
+              <li><span>💺</span> Interactive 2x2 Seat Reservation</li>
+              <li><span>🎫</span> Holographic Smart QR Boarding Pass</li>
+              <li><span>⏰</span> AI Wake-Up Proximity Geofence Alarm</li>
+            </ul>
+            <div class="portal-actions">
+              <button class="btn-portal-primary cyan" id="gatewayEnterCommuterBtn">
+                <span>⚡</span> Quick Commuter Access
+              </button>
+              <button class="btn-portal-secondary" id="gatewayLoginCommuterBtn">
+                <span>👤</span> Commuter Sign-In
+              </button>
+            </div>
+          </div>
+
+          <!-- Transit Authority Portal Card -->
+          <div class="portal-card authority" id="portalAuthorityCard">
+            <div class="card-glow-pill emerald">DISPATCH COMMAND</div>
+            <div class="portal-card-header">
+              <div class="portal-icon emerald">🛡️</div>
+              <div>
+                <h3 class="portal-title">Authority Command</h3>
+                <span class="portal-subtitle">KSRTC & MVD Fleet Dispatch</span>
+              </div>
+            </div>
+            <ul class="portal-features-list">
+              <li><span>🗺️</span> Realtime PostGIS Fleet Telemetry Table</li>
+              <li><span>🤖</span> Autonomous AI Fleet Surge Rebalancing</li>
+              <li><span>🚨</span> Emergency SOS Triage & Police 112 Link</li>
+              <li><span>📷</span> Conductor Smart QR Verification Terminal</li>
+              <li><span>📹</span> Edge Camera Anonymized Passenger Feed</li>
+              <li><span>⚡</span> Instant Relief Electric Bus Deployment</li>
+            </ul>
+            <div class="portal-actions">
+              <button class="btn-portal-primary emerald" id="gatewayEnterAuthorityBtn">
+                <span>🛡️</span> Dispatcher Command Login
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Cloud Engine Diagnostics Footer -->
+        <div class="gateway-cloud-status">
+          <div class="cloud-status-chip">
+            <span class="dot-pulse"></span>
+            <span>Supabase Cloud PostgreSQL 16 (ap-south-1)</span>
+          </div>
+          <div class="cloud-status-metrics">
+            <span>● 5 Stored RPCs Active</span>
+            <span>● 0ms Local Overhead (Serverless Direct)</span>
+            <span>● Zero Backend Daemon</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- SCREEN 2: DEDICATED COMMUTER LOGIN (#/auth/passenger) -->
+    <section class="screen-view" id="screenAuthPassenger">
+      <div class="auth-screen-container">
+        <div class="auth-card">
+          <button class="btn-back-nav" id="backFromPassengerAuthBtn">← Back to Gateway</button>
+          
+          <div class="auth-header">
+            <div class="auth-icon cyan">🚶</div>
+            <h2>Commuter Sign-In</h2>
+            <p>Access your eco-savings wallet, saved passes, and destination alarms.</p>
+          </div>
+
+          <div class="auth-form-group">
+            <label>Commuter Full Name</label>
+            <input type="text" id="passengerNameInput" value="Commuter User" placeholder="e.g. Rahul Nair">
+          </div>
+
+          <div class="auth-form-group">
+            <label>Mobile Number (For Pass SMS & Passbook)</label>
+            <input type="tel" id="passengerPhoneInput" value="+91 98470 12345" placeholder="+91 XXXXX XXXXX">
+          </div>
+
+          <div class="auth-form-group">
+            <label>Preferred Travel Corridor</label>
+            <select id="passengerRoutePref">
+              <option value="R1">Route R1: Thampanoor ➔ Kazhakkoottam</option>
+              <option value="R2">Route R2: East Fort ➔ Kovalam</option>
+              <option value="R3">Route R3: Thampanoor ➔ Technopark Phase 1</option>
+              <option value="R4">Route R4: East Fort ➔ Medical College</option>
+            </select>
+          </div>
+
+          <div class="auth-eco-perk">
+            <span>🌱</span>
+            <div>
+              <strong>+50 BusSense EcoPoints Credited</strong>
+              <div style="font-size: 0.72rem; color: var(--text-muted);">Redeem for 20% off-peak green tickets across Kerala.</div>
+            </div>
+          </div>
+
+          <button class="btn-book-seat" id="submitPassengerLoginBtn" style="padding: 13px;">
+            <span>🚀</span> Launch Commuter Live Radar
+          </button>
+
+          <button class="btn-demo-quick" id="quickPassengerGuestBtn">
+            ⚡ Quick Access as Guest (No Setup)
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- SCREEN 3: DEDICATED AUTHORITY LOGIN (#/auth/admin) -->
+    <section class="screen-view" id="screenAuthAdmin">
+      <div class="auth-screen-container">
+        <div class="auth-card security">
+          <button class="btn-back-nav" id="backFromAdminAuthBtn">← Back to Gateway</button>
+
+          <div class="auth-header">
+            <div class="auth-icon emerald">🛡️</div>
+            <h2>Transit Authority Terminal</h2>
+            <p>Official Dispatcher authentication for Kerala Transit Command & Autonomous Fleet HUD.</p>
+          </div>
+
+          <div class="auth-form-group">
+            <label>Dispatcher ID</label>
+            <input type="text" id="adminEmailInput" value="dispatcher@kerala.transit.gov">
+          </div>
+
+          <div class="auth-form-group">
+            <label>Security Passcode</label>
+            <input type="password" id="adminPasswordInput" value="kerala-transit-secure">
+          </div>
+
+          <div class="auth-form-group">
+            <label>Dispatch Station Command Badge</label>
+            <select id="adminStationSelect">
+              <option value="KL-AUTH-09">KL-AUTH-09 (Trivandrum Central Command)</option>
+              <option value="KL-AUTH-02">KL-AUTH-02 (Ernakulam Hub Dispatch)</option>
+              <option value="KL-AUTH-04">KL-AUTH-04 (Kozhikode North Hub)</option>
+            </select>
+          </div>
+
+          <div class="auth-eco-perk security">
+            <span>🔒</span>
+            <div>
+              <strong>End-to-End Encrypted Dispatch Protocol</strong>
+              <div style="font-size: 0.72rem; color: var(--text-muted);">Authorized personnel: KSRTC & Motor Vehicles Dept only.</div>
+            </div>
+          </div>
+
+          <button class="btn-book-seat" id="submitAdminLoginBtn" style="padding: 13px; background: linear-gradient(135deg, var(--emerald-green), #00A86B); color: #050811;">
+            <span>🛡️</span> Unlock Command Console
+          </button>
+
+          <button class="btn-demo-quick" id="quickAdminDemoBtn">
+            ⚡ 1-Click Dispatcher Demo Access
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- SCREEN 4: PASSENGER LIVE RADAR (#/passenger) -->
+    <section class="screen-view" id="screenPassengerRadar">
+      <div class="passenger-radar-layout">
+        
+        <!-- Left Commuter Drawer -->
+        <aside class="commuter-drawer">
+          <div class="drawer-header">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <h3 style="font-size: 0.95rem; font-weight: 800; color: #FFFFFF;" data-i18n="nearby_buses">Nearby Kerala Buses</h3>
+              <span style="font-size: 0.72rem; color: var(--cyan-glow); font-family: var(--font-mono);" id="liveBusCountBadge">0 Active</span>
+            </div>
+            <!-- Route Filter Chips -->
+            <div class="route-filter-bar">
+              <button class="route-chip active" data-route="ALL">All Routes</button>
+              <button class="route-chip" data-route="R1">R1: Kazhakkoottam</button>
+              <button class="route-chip" data-route="R2">R2: Kovalam</button>
+              <button class="route-chip" data-route="R3">R3: Technopark</button>
+              <button class="route-chip" data-route="R4">R4: Medical Col.</button>
+            </div>
+          </div>
+
+          <!-- Scrollable Bus List -->
+          <div class="bus-list-scroll" id="busListContainer">
+            <!-- Dynamically Populated with Real Buses from Supabase -->
+          </div>
+        </aside>
+
+        <!-- Interactive Leaflet Map Canvas -->
+        <div class="map-canvas-container">
+          <div class="map-canvas" id="mapCanvas"></div>
+
+          <!-- Floating Map HUD Controls -->
+          <div class="commuter-hud-controls">
+            <button class="btn-sos-shield" id="sosShieldBtn" title="1-Tap SOS Safety Radar">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              </svg>
+              <span>SOS</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- SCREEN 5: DEDICATED SEAT BOOKING SCREEN (#/passenger/book/:busId) -->
+    <section class="screen-view" id="screenSeatBooking">
+      <div class="dedicated-booking-container">
+        <div class="booking-card">
+          <div class="booking-card-head">
+            <div>
+              <button class="btn-back-nav" id="backFromBookingBtn">← Back to Radar</button>
+              <h2 class="booking-bus-title" id="bookingBusTitle">KSRTC Super Fast - Seat Reservation</h2>
+              <div class="booking-bus-route" id="bookingBusRoute">Route R1 | Thampanoor ➔ Kazhakkoottam</div>
+            </div>
+            <div class="badge-operator-pill" id="bookingOperatorBadge">KSRTC</div>
+          </div>
+
+          <div class="seat-map-body">
+            <!-- Bus Interior Shell -->
+            <div class="bus-interior-box">
+              <div class="driver-cabin-indicator">
+                <span>🚪 FRONT DOOR</span>
+                <span>☸ DRIVER CABIN</span>
+              </div>
+              <!-- 2x2 Seat Matrix -->
+              <div class="seats-grid" id="dedicatedSeatsGrid">
+                <!-- Dynamically generated 40 seats -->
+              </div>
+            </div>
+
+            <!-- Legend & Info Strip -->
+            <div class="seat-legend-row">
+              <div class="legend-item"><div class="legend-box available"></div><span>Available</span></div>
+              <div class="legend-item"><div class="legend-box selected"></div><span>Selected</span></div>
+              <div class="legend-item"><div class="legend-box women"></div><span>Women Reserved</span></div>
+              <div class="legend-item"><div class="legend-box booked"></div><span>Booked</span></div>
+            </div>
+
+            <!-- Green Discount Breakdown -->
+            <div class="pricing-breakdown">
+              <div>
+                <div style="font-size: 0.95rem; font-weight: 800; color: #FFF;">Fare: <span id="bookingFareAmountText">₹32.00</span></div>
+                <div style="font-size: 0.72rem; color: var(--emerald-green);" id="bookingCo2SavingsText">🌱 Saves 1.8 kg CO₂ vs car</div>
+              </div>
+              <span class="green-discount-pill" id="bookingGreenDiscountPill">🌱 20% GREEN OFF-PEAK DISCOUNT APPLIED</span>
+            </div>
+
+            <button class="btn-book-seat" id="confirmDedicatedSeatBookingBtn" style="padding: 14px; font-size: 0.95rem;" disabled>
+              Select a Seat to Continue
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SCREEN 6: SMART HOLOGRAPHIC TICKET SCREEN (#/passenger/ticket/:ticketId) -->
+    <section class="screen-view" id="screenTicketView">
+      <div class="dedicated-ticket-container">
+        <div class="ticket-card-wrapper">
+          <button class="btn-back-nav" id="backFromTicketBtn">← Return to Live Radar</button>
+          
+          <div class="ticket-pass-hologram">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div style="font-size: 0.85rem; font-weight: 800; color: var(--cyan-glow);">BUSSENSE SMART PASS</div>
+              <span class="brand-badge" id="ticketStatusBadge">● VERIFIED</span>
+            </div>
+            
+            <div class="qr-canvas-box" id="ticketDedicatedQrBox"></div>
+            
+            <div class="ticket-details-grid">
+              <div>
+                <div class="ticket-label">PASSENGER</div>
+                <div class="ticket-val" id="ticketScreenPassenger">Commuter User</div>
+              </div>
+              <div>
+                <div class="ticket-label">SEAT ALLOTMENT</div>
+                <div class="ticket-val highlight" id="ticketScreenSeat">Seat #14</div>
+              </div>
+              <div>
+                <div class="ticket-label">BUS ID & ROUTE</div>
+                <div class="ticket-val" id="ticketScreenBus">KSRTC-101 (R1)</div>
+              </div>
+              <div>
+                <div class="ticket-label">FARE (GREEN DISCOUNT)</div>
+                <div class="ticket-val green" id="ticketScreenFare">₹32.00 (20% OFF)</div>
+              </div>
+              <div style="grid-column: span 2;">
+                <div class="ticket-label">CRYPTOGRAPHIC QR TOKEN</div>
+                <div class="ticket-hash" id="ticketScreenHash">BS-TK-9F8A-77C1-2026</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="ticket-action-buttons">
+            <button class="btn-book-seat" id="ticketReturnRadarBtn" style="padding: 12px;">
+              <span>🗺️</span> Return to Live Fleet Radar
+            </button>
+            <button class="btn-demo-quick" id="ticketCopyHashBtn">
+              📋 Copy Verification Hash
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SCREEN 6B: ECOPASS CO2 WALLET (#/passenger/wallet) -->
+    <section class="screen-view" id="screenPassengerWallet">
+      <div class="settings-container">
+        
+        <!-- EcoPoints Hero Card -->
+        <div class="wallet-hero-card">
+          <div class="wallet-hero-head">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 1.5rem;">🌱</span>
+              <span style="font-size: 0.85rem; font-weight: 900; color: var(--emerald-green); letter-spacing: 1px;">ECOPASS CARBON WALLET</span>
+            </div>
+            <span class="brand-badge" style="background: rgba(0, 255, 157, 0.15); color: var(--emerald-green); border-color: var(--emerald-green);">TIER 2 COMMUTER</span>
+          </div>
+
+          <div class="wallet-balance-center">
+            <div class="wallet-points-num" id="walletEcoPointsVal">170</div>
+            <div class="wallet-points-label">Available Green EcoPoints</div>
+          </div>
+
+          <div class="wallet-stats-row">
+            <div class="wallet-stat-item">
+              <div class="num" style="color: var(--cyan-glow);" id="walletCo2Val">18.2 kg</div>
+              <div class="lbl">CO₂ Avoided vs Car</div>
+            </div>
+            <div class="wallet-divider"></div>
+            <div class="wallet-stat-item">
+              <div class="num" style="color: var(--emerald-green);">1.4 Trees</div>
+              <div class="lbl">Oxygen Offset Equiv.</div>
+            </div>
+            <div class="wallet-divider"></div>
+            <div class="wallet-stat-item">
+              <div class="num" style="color: #FFA500;">9 Trips</div>
+              <div class="lbl">Green Electric Transit</div>
+            </div>
+          </div>
+        </div>
+
+        <div id="walletClaimNotice" style="display: none; margin-top: 14px; padding: 12px; border-radius: 12px; background: rgba(0,255,157,0.15); border: 1px solid var(--emerald-green); color: #FFF; font-size: 0.85rem; font-weight: 700; text-align: center;"></div>
+
+        <!-- Section: Redeem Perks -->
+        <div class="settings-section">
+          <div class="settings-section-title">
+            <span>🎁</span> <span>Redeem Green Transit Perks</span>
+          </div>
+          <div class="perks-list">
+            <div class="perk-card">
+              <div class="perk-icon">🎟️</div>
+              <div class="perk-info">
+                <div class="perk-title">20% Off-Peak Commuter Coupon</div>
+                <div class="perk-desc">Valid on all KSRTC Fast Passenger corridors 10am-4pm.</div>
+              </div>
+              <button class="btn-redeem-perk" onclick="window.busSenseApp.redeemPerk('20% Off-Peak Coupon', 50)">50 pts</button>
+            </div>
+            <div class="perk-card">
+              <div class="perk-icon">⚡</div>
+              <div class="perk-info">
+                <div class="perk-title">1 Free Electric City Hop</div>
+                <div class="perk-desc">Free ride on Thiruvananthapuram City Electric Swift buses.</div>
+              </div>
+              <button class="btn-redeem-perk" onclick="window.busSenseApp.redeemPerk('Free Electric City Hop', 100)">100 pts</button>
+            </div>
+            <div class="perk-card">
+              <div class="perk-icon">⭐</div>
+              <div class="perk-info">
+                <div class="perk-title">KSRTC Swift Priority Pass</div>
+                <div class="perk-desc">Advance boarding guarantee on peak IT corridor routes.</div>
+              </div>
+              <button class="btn-redeem-perk" onclick="window.busSenseApp.redeemPerk('Priority Boarding Pass', 250)">250 pts</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section: Carbon Reduction Ledger -->
+        <div class="settings-section">
+          <div class="settings-section-title">
+            <span>📜</span> <span>Carbon Reduction Ledger</span>
+          </div>
+          <div class="ledger-table">
+            <div class="ledger-row">
+              <div class="ledger-icon">⚡</div>
+              <div class="ledger-info">
+                <div class="ledger-title">Route R1 Off-Peak Trip</div>
+                <div class="ledger-desc">Technopark ➔ Central Station (12.4 km)</div>
+              </div>
+              <div class="ledger-points">+15 pts <span class="ledger-co2">-2.1 kg CO₂</span></div>
+            </div>
+            <div class="ledger-row">
+              <div class="ledger-icon">🚌</div>
+              <div class="ledger-info">
+                <div class="ledger-title">Electric Shuttle Commute</div>
+                <div class="ledger-desc">Kazhakkoottam ➔ Infosys Campus</div>
+              </div>
+              <div class="ledger-points">+20 pts <span class="ledger-co2">-3.4 kg CO₂</span></div>
+            </div>
+            <div class="ledger-row">
+              <div class="ledger-icon">🌱</div>
+              <div class="ledger-info">
+                <div class="ledger-title">BusSense Sign-Up Bonus</div>
+                <div class="ledger-desc">Kerala Green Commuter Incentive</div>
+              </div>
+              <div class="ledger-points">+50 pts <span class="ledger-co2">Active</span></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- SCREEN 7: PETCONNECT-STYLE COMMUTER SETTINGS (#/passenger/settings) -->
+    <section class="screen-view" id="screenPassengerSettings">
+      <div class="settings-container">
+        
+        <!-- Commuter Profile Hero Card -->
+        <div class="settings-profile-card">
+          <div class="profile-avatar-circle">
+            <img src="assets/logo.png" alt="Avatar" style="width: 52px; height: 52px; border-radius: 50%; object-fit: cover;">
+          </div>
+          <div class="profile-info">
+            <div class="profile-name" id="settingsProfileName">Commuter User</div>
+            <div class="profile-tier">🌱 Silver Eco-Commuter • BusSense Kerala</div>
+          </div>
+          <div class="profile-stats-strip">
+            <div class="profile-stat">
+              <div class="stat-num" id="settingsCo2Saved">14.8 kg</div>
+              <div class="stat-lbl">CO₂ Prevented</div>
+            </div>
+            <div class="profile-stat">
+              <div class="stat-num" id="settingsEcoPoints">120 pts</div>
+              <div class="stat-lbl">Green Points</div>
+            </div>
+            <div class="profile-stat">
+              <div class="stat-num" id="settingsTripsCount">8</div>
+              <div class="stat-lbl">Clean Trips</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 1: Language & Locale -->
+        <div class="settings-section">
+          <div class="settings-section-title">
+            <span>🌐</span> <span>Language & Localization</span>
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Interface Language</div>
+              <div class="settings-desc">Switch between English and authentic Malayalam (മലയാളം)</div>
+            </div>
+            <div class="btn-group-pill">
+              <button class="pill-option active" id="langOptEn">English</button>
+              <button class="pill-option" id="langOptMl">മലയാളം</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 2: Cyber Audio Synthesizer -->
+        <div class="settings-section">
+          <div class="settings-section-title">
+            <span>🔊</span> <span>Procedural Cyber Audio Synthesizer</span>
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Master Audio Chimes</div>
+              <div class="settings-desc">Zero external audio files — procedural Web Audio API</div>
+            </div>
+            <label class="cyber-switch">
+              <input type="checkbox" id="audioMasterToggle" checked>
+              <span class="slider-round"></span>
+            </label>
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Audio Volume</div>
+              <div class="settings-desc" id="audioVolumeLabel">Volume: 80%</div>
+            </div>
+            <input type="range" min="0" max="100" value="80" class="cyber-range-slider" id="audioVolumeSlider">
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Test Audio Synthesizer Chimes</div>
+              <div class="settings-desc">Preview procedural transit acoustic cues</div>
+            </div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <button class="btn-test-chime" id="testWakeupChimeBtn">🔔 Arpeggio</button>
+              <button class="btn-test-chime" id="testTicketBeepBtn">🎫 Ticket Beep</button>
+              <button class="btn-test-chime" id="testRadarPingBtn">📡 Radar Ping</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 3: AI Proximity Destination Alarm -->
+        <div class="settings-section">
+          <div class="settings-section-title">
+            <span>⏰</span> <span>AI Destination Wake-Up Geofence</span>
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Geofence Proximity Radius</div>
+              <div class="settings-desc">Triggers chime before reaching selected bus stop</div>
+            </div>
+            <div class="btn-group-pill">
+              <button class="pill-option" data-radius="300">300m</button>
+              <button class="pill-option active" data-radius="500">500m</button>
+              <button class="pill-option" data-radius="1000">1 km</button>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Destination Monitored Stop</div>
+              <div class="settings-desc">Active alert trigger station</div>
+            </div>
+            <select id="settingsDestinationStopSelect" class="settings-select">
+              <option value="Technopark Phase 1">Technopark Phase 1 (Route R1/R3)</option>
+              <option value="Kazhakkoottam Junction">Kazhakkoottam Junction (Route R1)</option>
+              <option value="Kovalam Junction">Kovalam Junction (Route R2)</option>
+              <option value="Medical College">Medical College (Route R4)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Section 4: Supabase Cloud Live Diagnostics -->
+        <div class="settings-section">
+          <div class="settings-section-title">
+            <span>☁️</span> <span>Supabase Cloud Engine Diagnostics</span>
+          </div>
+          <div class="cloud-diagnostics-box">
+            <div class="diag-item">
+              <span class="diag-k">Cloud Endpoint:</span>
+              <span class="diag-v">https://kxeixcnqoudxicorxlxs.supabase.co</span>
+            </div>
+            <div class="diag-item">
+              <span class="diag-k">PostgreSQL Engine:</span>
+              <span class="diag-v">PostgreSQL 16 with PostGIS 3.4 (ap-south-1)</span>
+            </div>
+            <div class="diag-item">
+              <span class="diag-k">Direct Stored RPCs:</span>
+              <span class="diag-v highlight">5 Functions Registered & Verified</span>
+            </div>
+            <div class="diag-item">
+              <span class="diag-k">Connection Latency:</span>
+              <span class="diag-v green" id="settingsPingValue">● 24ms (Healthy)</span>
+            </div>
+            <div class="diag-item">
+              <span class="diag-k">Backend Architecture:</span>
+              <span class="diag-v">100% Serverless Direct Cloud (0 Local Daemons)</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 20px;">
+          <button class="btn-logout-settings" id="passengerLogoutBtn">
+            🚪 Switch Account / Return to Gateway
+          </button>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- SCREEN 8: IN-APP AUTHORITY COMMAND DASHBOARD (#/authority/command) -->
+    <section class="screen-view" id="screenAuthorityCommand">
+      <div class="authority-command-layout">
+        
+        <!-- Banner HUD -->
+        <div class="authority-banner">
+          <div class="authority-banner-title">
+            <span>🚨</span>
+            <span data-i18n="authority_banner">KERALA TRANSIT AUTHORITY - DISPATCH COMMAND HUD [LIVE]</span>
+          </div>
+          <div style="display: flex; gap: 12px; align-items: center;">
+            <span style="font-size: 0.75rem; color: var(--emerald-green); font-family: var(--font-mono);" id="authDispatcherBadge">DISPATCHER: KL-AUTH-09</span>
+            <button class="lang-toggle-btn" id="logoutAuthorityBtn" style="border-color: rgba(255, 59, 48, 0.4); color: #FF6B6B;">
+              Exit to Gateway
+            </button>
+          </div>
+        </div>
+
+        <!-- Command Grid -->
+        <div class="authority-grid">
+          
+          <!-- Stats Strip -->
+          <div class="stats-strip">
+            <div class="stat-box">
+              <div class="stat-icon cyan">🚍</div>
+              <div class="stat-info">
+                <h4>Active Fleet</h4>
+                <div class="num" id="authStatBuses">9</div>
+              </div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-icon green">👥</div>
+              <div class="stat-info">
+                <h4>Avg Route Load</h4>
+                <div class="num" id="authStatLoad">64%</div>
+              </div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-icon amber">⚠️</div>
+              <div class="stat-info">
+                <h4>Overcrowd Alerts</h4>
+                <div class="num" id="authStatOvercrowd">1 Route</div>
+              </div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-icon crimson">🛡️</div>
+              <div class="stat-info">
+                <h4>Active SOS Alerts</h4>
+                <div class="num" id="authStatSOS">0</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Modules Row -->
+          <div class="authority-modules-row">
+            
+            <!-- Module A: Autonomous AI Fleet Rebalancing -->
+            <div class="hud-panel">
+              <div class="hud-panel-head">
+                <div class="hud-panel-title">
+                  <span>🤖</span> <span>AI Autonomous Fleet Rebalancing</span>
+                </div>
+                <span class="brand-badge" style="background: rgba(0, 240, 255, 0.15); color: var(--cyan-glow); border-color: var(--cyan-glow);">REALTIME POSTGIS</span>
+              </div>
+              <div class="rebalance-box">
+                <p style="font-size: 0.82rem; color: var(--text-muted);">
+                  The AI Rebalancing Engine monitors crowd surges on active corridors. When route occupancy exceeds 85%, reserve electric buses are staged for autonomous dispatch.
+                </p>
+                
+                <div class="rebalance-status-alert" id="rebalanceSurgeBox">
+                  <div>
+                    <div style="font-size: 0.88rem; font-weight: 800; color: #FFA500;" id="rebalanceRouteLabel">
+                      Route R3: Thampanoor ➔ Technopark (92% Peak Load)
+                    </div>
+                    <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">
+                      Predicted spillover: 32 stranded commuters at Infosys Bypass stop.
+                    </div>
+                  </div>
+                  <button class="btn-deploy-relief" id="deployReliefBtn">
+                    <span>⚡</span> Deploy Relief Bus
+                  </button>
+                </div>
+
+                <div id="rebalanceDispatchLog" style="font-size: 0.78rem; font-family: var(--font-mono); color: var(--emerald-green); background: rgba(0,0,0,0.5); padding: 10px; border-radius: 6px; display: none;">
+                  <!-- Filled dynamically upon dispatch -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Module B: Emergency SOS Incident Triage -->
+            <div class="hud-panel">
+              <div class="hud-panel-head">
+                <div class="hud-panel-title">
+                  <span style="color: var(--crimson-danger);">🚨</span> <span>Emergency SOS Incident Radar</span>
+                </div>
+                <span class="brand-badge" style="background: rgba(255, 59, 48, 0.15); color: var(--crimson-danger); border-color: var(--crimson-danger);">POLICE 112 LINK</span>
+              </div>
+              <div class="sos-queue" id="authSosQueue">
+                <div style="text-align: center; color: var(--text-muted); font-size: 0.82rem; padding: 20px;">
+                  No active distress alerts. Monitoring all corridors...
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Edge Camera AI Vision Stream Simulation -->
+          <div class="hud-panel">
+            <div class="hud-panel-head">
+              <div class="hud-panel-title">
+                <span>📹</span> <span>Edge YOLOv8 Camera Telemetry & Privacy Anonymization Feed</span>
+              </div>
+              <span class="camera-privacy-badge">PRIVACY PROTOCOL: 100% BLURRED FACES & PLATES</span>
+            </div>
+            <div class="edge-feed-container">
+              <div class="camera-canvas-wrapper">
+                <canvas id="cameraFeedCanvas" width="640" height="200"></canvas>
+                <div style="position: absolute; bottom: 8px; left: 12px; font-size: 0.72rem; font-family: var(--font-mono); color: #FFF; background: rgba(0,0,0,0.7); padding: 4px 8px; border-radius: 4px;">
+                  CAM-R3-FRONT | 24 FPS | DETECTIONS: <span id="camDetectionCount">18 Passengers</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Live Fleet Telemetry Table -->
+          <div class="hud-panel">
+            <div class="hud-panel-head">
+              <div class="hud-panel-title">
+                <span>📊</span> <span>Live Fleet PostGIS Telemetry (Supabase PostgreSQL)</span>
+              </div>
+              <button class="lang-toggle-btn" id="refreshTelemetryBtn">🔄 Refresh</button>
+            </div>
+            <div class="telemetry-table-wrapper">
+              <table class="telemetry-table">
+                <thead>
+                  <tr>
+                    <th>Bus ID</th>
+                    <th>Operator</th>
+                    <th>Route</th>
+                    <th>GPS Coordinates</th>
+                    <th>Speed</th>
+                    <th>Occupancy</th>
+                    <th>ETA</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="telemetryTableBody">
+                  <!-- Dynamically populated from Supabase -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- SCREEN 9: CONDUCTOR SMART QR VALIDATOR (#/authority/verify) -->
+    <section class="screen-view" id="screenAuthorityVerify">
+      <div class="dedicated-verify-container">
+        <div class="verify-card">
+          <div class="verify-head">
+            <div class="verify-icon">📷</div>
+            <h2>Conductor Ticket Validator</h2>
+            <p>Cryptographic boarding pass verification linked directly to Supabase Stored RPC.</p>
+          </div>
+
+          <!-- Viewfinder Frame -->
+          <div class="scanner-frame">
+            <div class="scanner-bracket top-left"></div>
+            <div class="scanner-bracket top-right"></div>
+            <div class="scanner-bracket bottom-left"></div>
+            <div class="scanner-bracket bottom-right"></div>
+            <div class="scanner-laser-line"></div>
+            <div class="scanner-text">ALIGN PASS QR CODE IN FRAME</div>
+          </div>
+
+          <!-- Input Code / QR String -->
+          <div class="verify-input-group">
+            <label>Scan or Enter Cryptographic Ticket Hash</label>
+            <div style="display: flex; gap: 8px;">
+              <input type="text" id="conductorTicketHashInput" placeholder="e.g. BS-TK-9F8A-77C1-2026 or full hash">
+              <button class="btn-book-seat" id="btnVerifyTicketHash" style="white-space: nowrap; padding: 10px 18px;">
+                Verify Pass
+              </button>
+            </div>
+          </div>
+
+          <!-- Quick Test Token Buttons -->
+          <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+            <button class="btn-test-chime" id="btnPasteLatestTicket">📋 Paste Latest Booked Ticket</button>
+          </div>
+
+          <!-- Validation Result Hologram -->
+          <div class="validation-receipt" id="conductorReceiptBox" style="display: none;">
+            <div class="receipt-stamp valid" id="conductorReceiptStamp">AUTHORIZED BOARDING</div>
+            <div class="receipt-grid">
+              <div>
+                <span class="rc-label">SEAT NUMBER</span>
+                <span class="rc-val highlight" id="rcSeat">Seat #14</span>
+              </div>
+              <div>
+                <span class="rc-label">BUS & OPERATOR</span>
+                <span class="rc-val" id="rcBus">KSRTC-101 (Super Fast)</span>
+              </div>
+              <div>
+                <span class="rc-label">ROUTE</span>
+                <span class="rc-val" id="rcRoute">R1: Kazhakkoottam</span>
+              </div>
+              <div>
+                <span class="rc-label">VERIFIED BY</span>
+                <span class="rc-val" id="rcConductor">KL-AUTH-09</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- SCREEN 10: AUTHORITY PREFERENCES & SETTINGS (#/authority/settings) -->
+    <section class="screen-view" id="screenAuthoritySettings">
+      <div class="settings-container">
+        
+        <div class="settings-profile-card security">
+          <div class="profile-avatar-circle security">
+            🛡️
+          </div>
+          <div class="profile-info">
+            <div class="profile-name">Dispatcher KL-AUTH-09</div>
+            <div class="profile-tier">Kerala Transit Authority • Trivandrum Central Command</div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-section-title">
+            <span>⚙️</span> <span>Autonomous AI Dispatch Rules</span>
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Surge Rebalancing Threshold</div>
+              <div class="settings-desc" id="settingsRebalanceLabel">Occupancy Threshold: 85%</div>
+            </div>
+            <input type="range" min="70" max="95" value="85" class="cyber-range-slider" id="settingsRebalanceSlider">
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Automatic Police 112 Dispatch</div>
+              <div class="settings-desc">Immediately forward high-priority SOS distress alerts</div>
+            </div>
+            <label class="cyber-switch">
+              <input type="checkbox" checked>
+              <span class="slider-round"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-section-title">
+            <span>📡</span> <span>Fleet Telemetry Sync</span>
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Live Telemetry Poll Frequency</div>
+              <div class="settings-desc">Interval for fetching PostGIS updates</div>
+            </div>
+            <div class="btn-group-pill">
+              <button class="pill-option active">3 sec</button>
+              <button class="pill-option">5 sec</button>
+              <button class="pill-option">10 sec</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 20px;">
+          <button class="btn-logout-settings" id="authorityLogoutSettingsBtn">
+            🚪 Exit Dispatch Terminal
+          </button>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- SCREEN 11: EMERGENCY SOS DISTRESS RADAR (#/sos) -->
+    <section class="screen-view" id="screenSosAlert">
+      <div class="dedicated-sos-container">
+        <div class="sos-danger-card">
+          <div class="sos-head">
+            <div class="sos-pulsing-icon">🚨</div>
+            <h1 style="color: #FF6B6B; font-size: 1.5rem; font-weight: 900;">EMERGENCY DISTRESS BEACON</h1>
+            <p style="color: var(--text-muted); font-size: 0.85rem;">
+              Broadcasting your live GPS coordinates to <strong>Kerala Police 112 Control Room</strong> and the <strong>Transit Authority Command Center</strong>.
+            </p>
+          </div>
+
+          <div class="sos-coords-box">
+            <div>LATITUDE: <strong style="color: #FFF;">8.5241</strong> | LONGITUDE: <strong style="color: #FFF;">76.9366</strong></div>
+            <div style="margin-top: 4px; font-size: 0.72rem; color: #FFA500;">CORRIDOR: Trivandrum Central • ACCURACY: ±3m</div>
+          </div>
+
+          <div class="sos-dispatch-status">
+            <div class="status-pulse-row">
+              <span class="dot-pulse-red"></span>
+              <span style="font-weight: 800; color: #FF6B6B;">KERALA POLICE 112 DISPATCHED</span>
+            </div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">
+              Nearby patrol vehicle KL-01-P-112 is en route. Stay in a safe area.
+            </div>
+          </div>
+
+          <div class="sos-actions">
+            <button class="btn-deploy-relief" id="btnSilenceSosAudio" style="background: #FF3B30; color: #FFF; padding: 13px; justify-content: center;">
+              🔇 Silence Siren Sound
+            </button>
+            <button class="btn-back-nav" id="btnResolveSosBeacon" style="padding: 10px 16px; border-color: rgba(255,255,255,0.2); justify-content: center;">
+              ✅ Safe Now / Deactivate Beacon
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- =======================================================
+       FLOATING FROSTED NAVIGATION DOCK (PetConnect AI Style)
+       ======================================================= -->
+  <nav class="floating-nav-dock" id="floatingNavDock">
+    
+    <!-- Passenger Navigation Items -->
+    <div class="dock-items-group" id="dockPassengerGroup">
+      <a href="#/passenger" class="dock-item active" data-route="/passenger">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+        </svg>
+        <span>Radar</span>
+      </a>
+      <a href="#/passenger/ticket/latest" class="dock-item" data-route="/passenger/ticket">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="5" width="20" height="14" rx="2"></rect>
+          <line x1="2" y1="10" x2="22" y2="10"></line>
+        </svg>
+        <span>Pass</span>
+      </a>
+      <a href="#/passenger/wallet" class="dock-item" data-route="/passenger/wallet">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+        </svg>
+        <span>EcoPass</span>
+      </a>
+      <a href="#/passenger/settings" class="dock-item" data-route="/passenger/settings">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+        <span>Settings</span>
+      </a>
+      <a href="#/sos" class="dock-item sos-dock" data-route="/sos">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+        </svg>
+        <span>SOS</span>
+      </a>
+    </div>
+
+    <!-- Authority Navigation Items -->
+    <div class="dock-items-group" id="dockAuthorityGroup" style="display: none;">
+      <a href="#/authority/command" class="dock-item active" data-route="/authority/command">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+          <line x1="3" y1="9" x2="21" y2="9"></line>
+          <line x1="9" y1="21" x2="9" y2="9"></line>
+        </svg>
+        <span>HUD</span>
+      </a>
+      <a href="#/authority/verify" class="dock-item" data-route="/authority/verify">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 7V5a2 2 0 0 1 2-2h2"></path>
+          <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
+          <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path>
+          <path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
+        </svg>
+        <span>Verify QR</span>
+      </a>
+      <a href="#/authority/settings" class="dock-item" data-route="/authority/settings">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+        <span>Config</span>
+      </a>
+      <a href="#/" class="dock-item" data-route="/">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+          <polyline points="16 17 21 12 16 7"></polyline>
+          <line x1="21" y1="12" x2="9" y2="12"></line>
+        </svg>
+        <span>Exit</span>
+      </a>
+    </div>
+
+  </nav>
+
+  <!-- Application Logic Scripts -->
+  <script src="components/audio_synth.js"></script>
+  <script src="components/bus_sprites.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

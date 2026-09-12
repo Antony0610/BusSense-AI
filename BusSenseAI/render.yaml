@@ -1,9 +1,0 @@
-services:
-  - type: web
-    name: bussense-ai
-    runtime: python
-    buildCommand: find . -name "requirements.txt" -exec pip install -r {} \;
-    startCommand: python BusSenseAI/backend/app.py || python backend/app.py || python app.py
-    envVars:
-      - key: PORT
-        value: 5000
