@@ -4,15 +4,19 @@ __pycache__/
 database/*.db
 reports/latest_occupancy.json
 
-# Flutter
+# Flutter & Android build artifacts
 mobile_app_flutter/.dart_tool/
 mobile_app_flutter/.flutter-plugins
 mobile_app_flutter/.flutter-plugins-dependencies
 mobile_app_flutter/build/
 mobile_app_flutter/.pub-cache/
 mobile_app_flutter/.pub/
+mobile_app_flutter/android/.gradle/
+mobile_app_flutter/android/.kotlin/
+*.apk
 
 # IDE & OS
 .DS_Store
 .idea/
 *.swp
+
