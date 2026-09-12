@@ -97,6 +97,7 @@ class BusSenseApp {
   async init() {
     console.log('[BusSense AI] Initializing PetConnect AI Architecture with Supabase Cloud Direct...');
     this.initRouter();
+    await this.initAuth();
     this.bindEvents();
     this.initCameraFeed();
     this.setupSupabaseRealtime();
@@ -110,6 +111,103 @@ class BusSenseApp {
 
     // Initial ping test
     this.measureSupabasePing();
+  }
+
+  /* =========================================================================
+     SUPABASE GOTRUE AUTHENTICATION
+     ========================================================================= */
+  async initAuth() {
+    if (!supabase || !supabase.auth) return;
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session && session.user) {
+        this.authUser = session.user;
+        const meta = session.user.user_metadata || {};
+        if (meta.role === 'authority_admin') {
+          this.currentRole = 'authority_admin';
+          this.dispatcher.id = meta.badge_id || 'KL-AUTH-09';
+        } else {
+          this.currentRole = 'passenger';
+          if (meta.full_name) this.currentUser.name = meta.full_name;
+        }
+        console.log('[Supabase Auth] Restored active session for:', session.user.email);
+      }
+
+      supabase.auth.onAuthStateChange((event, session) => {
+        console.log('[Supabase Auth] State changed:', event, session?.user?.id);
+        this.authUser = session ? session.user : null;
+      });
+    } catch (e) {
+      console.warn('[Supabase Auth] Initialization note:', e.message);
+    }
+  }
+
+  async signInPassengerSupabase(email, phone, name, routePref) {
+    if (!supabase || !supabase.auth) return;
+    try {
+      const cleanPhone = (phone || '+91 98470 12345').replace(/[^0-9]/g, '');
+      const userEmail = email || `commuter_${cleanPhone || 'guest'}@bussense.kerala.gov.in`;
+      const pass = 'CommuterSecurePass2026!';
+      let { data, error } = await supabase.auth.signInWithPassword({
+        email: userEmail,
+        password: pass
+      });
+      if (error) {
+        const res = await supabase.auth.signUp({
+          email: userEmail,
+          password: pass,
+          options: {
+            data: { full_name: name || 'Commuter User', phone: phone, role: 'passenger', route_pref: routePref || 'R1' }
+          }
+        });
+        data = res.data;
+      }
+      if (data?.session) {
+        this.authUser = data.session.user;
+        console.log('[Supabase Auth] Passenger signed in:', data.session.user.id);
+      }
+    } catch (e) {
+      console.warn('[Supabase Auth] Passenger sign-in:', e.message);
+    }
+  }
+
+  async signInAuthoritySupabase(badgeId, passkey) {
+    if (!supabase || !supabase.auth) return;
+    try {
+      const cleanBadge = (badgeId || 'KL-AUTH-09').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const authEmail = `${cleanBadge}@authority.transit.kerala.gov.in`;
+      const pass = passkey || 'KeralaAdminSecure2026!';
+      let { data, error } = await supabase.auth.signInWithPassword({
+        email: authEmail,
+        password: pass
+      });
+      if (error) {
+        const res = await supabase.auth.signUp({
+          email: authEmail,
+          password: pass,
+          options: {
+            data: { role: 'authority_admin', badge_id: badgeId, full_name: `Dispatcher ${badgeId}` }
+          }
+        });
+        data = res.data;
+      }
+      if (data?.session) {
+        this.authUser = data.session.user;
+        console.log('[Supabase Auth] Authority Dispatcher signed in:', data.session.user.id);
+      }
+    } catch (e) {
+      console.warn('[Supabase Auth] Authority sign-in:', e.message);
+    }
+  }
+
+  async signOutSupabase() {
+    if (supabase && supabase.auth) {
+      try {
+        await supabase.auth.signOut();
+        this.authUser = null;
+        console.log('[Supabase Auth] Signed out successfully.');
+      } catch (e) {}
+    }
   }
 
   /* =========================================================================
@@ -1116,7 +1214,7 @@ class BusSenseApp {
 
     const submitPassengerLoginBtn = document.getElementById('submitPassengerLoginBtn');
     if (submitPassengerLoginBtn) {
-      submitPassengerLoginBtn.addEventListener('click', () => {
+      submitPassengerLoginBtn.addEventListener('click', async () => {
         const nameInput = document.getElementById('passengerNameInput');
         const phoneInput = document.getElementById('passengerPhoneInput');
         const routePref = document.getElementById('passengerRoutePref');
@@ -1128,16 +1226,21 @@ class BusSenseApp {
         sessionStorage.setItem('bussense_role', 'passenger');
         this.saveUserState();
         this.updateUserBadge();
+
+        submitPassengerLoginBtn.textContent = 'Authenticating...';
+        await this.signInPassengerSupabase(null, this.currentUser.phone, this.currentUser.name, this.currentUser.routePref);
+        submitPassengerLoginBtn.textContent = 'Sign In to Commuter Portal';
         this.navigateTo('/passenger');
       });
     }
 
     const quickPassengerGuestBtn = document.getElementById('quickPassengerGuestBtn');
     if (quickPassengerGuestBtn) {
-      quickPassengerGuestBtn.addEventListener('click', () => {
+      quickPassengerGuestBtn.addEventListener('click', async () => {
         this.currentRole = 'passenger';
         sessionStorage.setItem('bussense_role', 'passenger');
         this.updateUserBadge();
+        await this.signInPassengerSupabase(null, '+91 98470 12345', 'Guest Commuter', 'R1');
         this.navigateTo('/passenger');
       });
     }
@@ -1150,23 +1253,30 @@ class BusSenseApp {
 
     const submitAdminLoginBtn = document.getElementById('submitAdminLoginBtn');
     if (submitAdminLoginBtn) {
-      submitAdminLoginBtn.addEventListener('click', () => {
+      submitAdminLoginBtn.addEventListener('click', async () => {
         const stationSelect = document.getElementById('adminStationSelect');
+        const passcodeInput = document.getElementById('adminPasscodeInput');
         this.dispatcher.id = stationSelect.value || 'KL-AUTH-09';
         this.currentRole = 'authority_admin';
         sessionStorage.setItem('bussense_role', 'authority_admin');
         this.updateUserBadge();
+
+        submitAdminLoginBtn.textContent = 'Verifying Credentials...';
+        await this.signInAuthoritySupabase(this.dispatcher.id, passcodeInput ? passcodeInput.value : 'KeralaAdminSecure2026!');
+        submitAdminLoginBtn.textContent = 'Authorize Command Access';
         this.navigateTo('/authority/command');
       });
     }
 
     const quickAdminDemoBtn = document.getElementById('quickAdminDemoBtn');
     if (quickAdminDemoBtn) {
-      quickAdminDemoBtn.addEventListener('click', () => {
+      quickAdminDemoBtn.addEventListener('click', async () => {
         this.dispatcher.id = 'KL-AUTH-09';
         this.currentRole = 'authority_admin';
         sessionStorage.setItem('bussense_role', 'authority_admin');
         this.updateUserBadge();
+
+        await this.signInAuthoritySupabase('KL-AUTH-09', 'KeralaAdminSecure2026!');
         this.navigateTo('/authority/command');
       });
     }
@@ -1262,27 +1372,30 @@ class BusSenseApp {
     // Logout Buttons
     const logoutAuthorityBtn = document.getElementById('logoutAuthorityBtn');
     if (logoutAuthorityBtn) {
-      logoutAuthorityBtn.addEventListener('click', () => {
+      logoutAuthorityBtn.addEventListener('click', async () => {
         sessionStorage.removeItem('bussense_role');
         this.currentRole = 'passenger';
         this.updateUserBadge();
+        await this.signOutSupabase();
         this.navigateTo('/');
       });
     }
 
     const authorityLogoutSettingsBtn = document.getElementById('authorityLogoutSettingsBtn');
     if (authorityLogoutSettingsBtn) {
-      authorityLogoutSettingsBtn.addEventListener('click', () => {
+      authorityLogoutSettingsBtn.addEventListener('click', async () => {
         sessionStorage.removeItem('bussense_role');
         this.currentRole = 'passenger';
         this.updateUserBadge();
+        await this.signOutSupabase();
         this.navigateTo('/');
       });
     }
 
     const passengerLogoutBtn = document.getElementById('passengerLogoutBtn');
     if (passengerLogoutBtn) {
-      passengerLogoutBtn.addEventListener('click', () => {
+      passengerLogoutBtn.addEventListener('click', async () => {
+        await this.signOutSupabase();
         this.navigateTo('/');
       });
     }
