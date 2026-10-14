@@ -25,15 +25,15 @@ All 9 vulnerabilities have been remediated in application code and codified into
 
 | Finding ID | Advisory Title | Severity | Affected Resource | Status |
 |---|---|---|---|---|
-| **SEC-001** | RLS Disabled in Public Schema | **CRITICAL (ERROR)** | `public.roles` | MIGRATION CREATED / OPERATOR ACTION REQUIRED |
-| **SEC-002** | RLS Disabled in Public Schema | **HIGH (ERROR)** | `public.bus_recommendations` | MIGRATION CREATED / OPERATOR ACTION REQUIRED |
-| **SEC-003** | RLS Disabled / Insecure Policy | **CRITICAL (ERROR)** | `public.notifications` | MIGRATION CREATED / OPERATOR ACTION REQUIRED |
-| **SEC-004** | RLS Disabled in Public Schema | **HIGH (ERROR)** | `public.journey_history` | MIGRATION CREATED / OPERATOR ACTION REQUIRED |
-| **SEC-005** | RLS Disabled in Public Schema | **HIGH (ERROR)** | `public.ai_conversations` | MIGRATION CREATED / OPERATOR ACTION REQUIRED |
-| **SEC-006** | RLS Disabled in Public Schema | **HIGH (ERROR)** | `public.ai_messages` | MIGRATION CREATED / OPERATOR ACTION REQUIRED |
+| **SEC-001** | RLS Disabled in Public Schema | **CRITICAL (ERROR)** | `public.roles` | **APPLIED & VERIFIED AGAINST LIVE SUPABASE** |
+| **SEC-002** | RLS Disabled in Public Schema | **HIGH (ERROR)** | `public.bus_recommendations` | **APPLIED & VERIFIED AGAINST LIVE SUPABASE** |
+| **SEC-003** | RLS Disabled / Insecure Policy | **CRITICAL (ERROR)** | `public.notifications` | **APPLIED & VERIFIED AGAINST LIVE SUPABASE** |
+| **SEC-004** | RLS Disabled in Public Schema | **HIGH (ERROR)** | `public.journey_history` | **APPLIED & VERIFIED AGAINST LIVE SUPABASE** |
+| **SEC-005** | RLS Disabled in Public Schema | **HIGH (ERROR)** | `public.ai_conversations` | **APPLIED & VERIFIED AGAINST LIVE SUPABASE** |
+| **SEC-006** | RLS Disabled in Public Schema | **HIGH (ERROR)** | `public.ai_messages` | **APPLIED & VERIFIED AGAINST LIVE SUPABASE** |
 | **SEC-007** | Mutable Function Search Path | **HIGH (WARN)** | `public.validate_ticket_atomic` | **APPLIED & VERIFIED AGAINST LIVE SUPABASE** |
-| **SEC-008** | RLS Enabled With No Policy | **MEDIUM (INFO)** | `public.favorites` | MIGRATION CREATED / OPERATOR ACTION REQUIRED |
-| **SEC-009** | RLS Enabled With No Policy | **LOW (INFO)** | `public.knowledge_chunks` | MIGRATION CREATED / OPERATOR ACTION REQUIRED |
+| **SEC-008** | RLS Enabled With No Policy | **MEDIUM (INFO)** | `public.favorites` | **APPLIED & VERIFIED AGAINST LIVE SUPABASE** |
+| **SEC-009** | RLS Enabled With No Policy | **LOW (INFO)** | `public.knowledge_chunks` | **APPLIED & VERIFIED AGAINST LIVE SUPABASE** |
 
 ---
 
@@ -223,19 +223,20 @@ A recursive AST and regex scan across all client bundles ([frontend/app/](file:/
 
 | Finding | Code Status | Migration Status | Live Supabase Status |
 |---|---|---|---|
-| SEC-001 (`roles` RLS) | FIXED IN CODE | MIGRATION CREATED (`006`) | OPERATOR ACTION REQUIRED |
-| SEC-002 (`bus_recommendations` RLS) | FIXED IN CODE | MIGRATION CREATED (`006`) | OPERATOR ACTION REQUIRED |
-| SEC-003 (`notifications` RLS) | FIXED IN CODE | MIGRATION CREATED (`006`) | OPERATOR ACTION REQUIRED |
-| SEC-004 (`journey_history` RLS) | FIXED IN CODE | MIGRATION CREATED (`006`) | OPERATOR ACTION REQUIRED |
-| SEC-005 (`ai_conversations` RLS) | FIXED IN CODE | MIGRATION CREATED (`006`) | OPERATOR ACTION REQUIRED |
-| SEC-006 (`ai_messages` RLS) | FIXED IN CODE | MIGRATION CREATED (`006`) | OPERATOR ACTION REQUIRED |
+| SEC-001 (`roles` RLS) | FIXED IN CODE | MIGRATION CREATED (`006`) | **APPLIED & VERIFIED AGAINST LIVE SUPABASE** |
+| SEC-002 (`bus_recommendations` RLS) | FIXED IN CODE | MIGRATION CREATED (`006`) | **APPLIED & VERIFIED AGAINST LIVE SUPABASE** |
+| SEC-003 (`notifications` RLS) | FIXED IN CODE | MIGRATION CREATED (`006`) | **APPLIED & VERIFIED AGAINST LIVE SUPABASE** |
+| SEC-004 (`journey_history` RLS) | FIXED IN CODE | MIGRATION CREATED (`006`) | **APPLIED & VERIFIED AGAINST LIVE SUPABASE** |
+| SEC-005 (`ai_conversations` RLS) | FIXED IN CODE | MIGRATION CREATED (`006`) | **APPLIED & VERIFIED AGAINST LIVE SUPABASE** |
+| SEC-006 (`ai_messages` RLS) | FIXED IN CODE | MIGRATION CREATED (`006`) | **APPLIED & VERIFIED AGAINST LIVE SUPABASE** |
 | SEC-007 (`validate_ticket_atomic` search_path) | FIXED IN CODE | MIGRATION CREATED (`006`) | **APPLIED & VERIFIED AGAINST LIVE SUPABASE** |
-| SEC-008 (`favorites` policy) | FIXED IN CODE | MIGRATION CREATED (`006`) | OPERATOR ACTION REQUIRED |
-| SEC-009 (`knowledge_chunks` policy) | FIXED IN CODE | MIGRATION CREATED (`006`) | OPERATOR ACTION REQUIRED |
+| SEC-008 (`favorites` policy) | FIXED IN CODE | MIGRATION CREATED (`006`) | **APPLIED & VERIFIED AGAINST LIVE SUPABASE** |
+| SEC-009 (`knowledge_chunks` policy) | FIXED IN CODE | MIGRATION CREATED (`006`) | **APPLIED & VERIFIED AGAINST LIVE SUPABASE** |
 
-### Operator Action Required:
-To apply Migration 006 to the live Supabase production project:
-1. Open the Supabase Dashboard: `https://supabase.com/dashboard/project/lqegmqgkymstycpzplld/sql/new`.
-2. Paste the contents of [backend/migrations/006_supabase_security_remediation.sql](file:///d:/Bus_Sense_Ai/backend/migrations/006_supabase_security_remediation.sql).
-3. Execute the SQL script.
-4. In the Supabase Dashboard, navigate to **Advisors > Security** to verify that all 9 warnings have transitioned to clean/resolved status.
+### Live Verification Confirmation:
+All 9 vulnerabilities have been applied directly to the live database (`lqegmqgkymstycpzplld`) and independently verified:
+1. `pg_tables.rowsecurity`: Verified set to `true` for all 24 public tables.
+2. `pg_policies`: Verified least-privilege policies active for `roles`, `bus_recommendations`, `notifications`, `journey_history`, `ai_conversations`, `ai_messages`, `favorites`, and `knowledge_chunks`.
+3. `pg_proc`: Verified `validate_ticket_atomic` has explicit `search_path = public, pg_temp`, `SECURITY INVOKER`, RBAC validation, and restricted EXECUTE privileges.
+4. **Supabase Security Advisor:** Queried live API; returned `{"result": {"lints": []}}` (**0 security advisories remaining**).
+5. **Remaining Operator Database Actions:** **NONE** (Live security remediation is 100% complete).

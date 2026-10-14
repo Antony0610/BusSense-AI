@@ -44,7 +44,7 @@ This report documents the exhaustive repository audit, Git history analysis, pre
 | **H10** | Smart Bus Recommendation Engine | YES | 27 recommendation tests | COMMITTED (`24b84cf`) | **PUBLISHED TO GITHUB** |
 | **H11** | RAG AI Transport Assistant | YES | 29 RAG backend tests | COMMITTED (`24b84cf`) | **PUBLISHED TO GITHUB** |
 | **H12** | Realtime Data & Notifications | YES | 23 realtime tests + 4 mobile | COMMITTED (`24b84cf`, `6be4f23`) | **PUBLISHED TO GITHUB** |
-| **H13** | Full System Integration & Supabase Security | YES | 12 security tests + full suites | COMMITTED (`312c7f5`) | **PUBLISHED TO GITHUB** |
+| **H13** | Full System Integration & Supabase Security | YES | 12 security tests + full suites | COMMITTED (`312c7f5`, `745c52c`) | **PUBLISHED TO GITHUB** |
 
 ---
 
@@ -68,7 +68,9 @@ Before preparing commits or staging files, an automated recursive security audit
 The repository history on GitHub contains the following verified commits:
 
 ```
-312c7f5 (HEAD -> master, origin/master) feat(security): H13 full system integration, Supabase security remediation, and audit reports
+745c52c (HEAD -> master, origin/master) feat(security): harden Supabase RLS policies and document verified live advisors
+6bbbd39 docs: finalize GitHub sync report with verified remote push confirmation
+312c7f5 feat(security): H13 full system integration, Supabase security remediation, and audit reports
 32f1a22 docs: synchronize architecture decision records, API specs, and phase reports (H1-H12)
 a15d8a2 feat(authority): implement Next.js Authority Operations Console and telemetry HUD (H7)
 6be4f23 feat(mobile): implement unified Flutter passenger and conductor experience (H4-H6, H12)
@@ -95,6 +97,12 @@ a15d8a2 feat(authority): implement Next.js Authority Operations Console and tele
 6. **`312c7f5` — `feat(security): H13 full system integration, Supabase security remediation, and audit reports`**
    - Files: 25 files including Migration 006, test suite `test_supabase_security_h13.py`, reports (`PHASE_H13_REPORT.md`, `SUPABASE_SECURITY_AUDIT.md`, `GITHUB_SYNC_REPORT.md`), updated `MEMORY.md`, and `CHANGELOG.md`.
    - Role: Complete capstone integration, Supabase security hardening, and capstone documentation.
+7. **`6bbbd39` — `docs: finalize GitHub sync report with verified remote push confirmation`**
+   - Files: `docs/GITHUB_SYNC_REPORT.md`
+   - Role: Final synchronization status with remote push confirmation.
+8. **`745c52c` — `feat(security): harden Supabase RLS policies and document verified live advisors`**
+   - Files: `backend/migrations/006_supabase_security_remediation.sql`, `backend/tests/test_supabase_security_h13.py`, `backend/pytest.ini`, `docs/PHASE_H13_REPORT.md`, `docs/SUPABASE_SECURITY_AUDIT.md`.
+   - Role: Hardened Supabase RLS least-privilege policies and documented verified live database security status.
 
 ---
 

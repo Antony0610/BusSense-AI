@@ -84,17 +84,19 @@ The unified realtime event delivery subsystem was verified end-to-end:
 
 ## 3. Supabase Security Audit Summary
 
-A dedicated audit of project `lqegmqgkymstycpzplld` addressed 9 vulnerabilities:
+A dedicated audit of project `lqegmqgkymstycpzplld` addressed and resolved 9 vulnerabilities on the live Supabase database:
 
-1. **`roles`:** RLS enabled; read-only policy for authenticated/anon; mutation revoked (`MIGRATION CREATED`).
-2. **`bus_recommendations`:** RLS enabled; corridor template read + strict user ownership on write (`MIGRATION CREATED`).
-3. **`notifications`:** RLS enabled; permissive `USING (true)` and `WITH CHECK (true)` eliminated; strict user ownership enforced (`MIGRATION CREATED`).
-4. **`journey_history`:** RLS enabled; user ownership enforced (`MIGRATION CREATED`).
-5. **`ai_conversations`:** RLS enabled; unauthenticated shared NULL conversation exposure eliminated; user ownership enforced (`MIGRATION CREATED`).
-6. **`ai_messages`:** RLS enabled; parent conversation ownership enforced (`MIGRATION CREATED`).
-7. **`validate_ticket_atomic`:** Explicit `SET search_path = public, pg_temp;` applied, caller RBAC check added, and EXECUTE revoked from anon (**APPLIED & VERIFIED AGAINST LIVE SUPABASE**).
-8. **`favorites`:** Added user-isolated CRUD policy (`MIGRATION CREATED`).
-9. **`knowledge_chunks`:** Added public read-only policy with mutation revoked (`MIGRATION CREATED`).
+1. **`roles`:** RLS enabled; read-only policy for authenticated/anon; mutation revoked (**APPLIED & VERIFIED AGAINST LIVE SUPABASE**).
+2. **`bus_recommendations`:** RLS enabled; corridor template read + strict user ownership on write (**APPLIED & VERIFIED AGAINST LIVE SUPABASE**).
+3. **`notifications`:** RLS enabled; permissive `USING (true)` and `WITH CHECK (true)` eliminated; strict user ownership enforced (**APPLIED & VERIFIED AGAINST LIVE SUPABASE**).
+4. **`journey_history`:** RLS enabled; user ownership enforced (**APPLIED & VERIFIED AGAINST LIVE SUPABASE**).
+5. **`ai_conversations`:** RLS enabled; unauthenticated shared NULL conversation exposure eliminated; user ownership enforced (**APPLIED & VERIFIED AGAINST LIVE SUPABASE**).
+6. **`ai_messages`:** RLS enabled; parent conversation ownership enforced (**APPLIED & VERIFIED AGAINST LIVE SUPABASE**).
+7. **`validate_ticket_atomic`:** Explicit `SET search_path = public, pg_temp;` applied, `SECURITY INVOKER` set, caller RBAC check added, and EXECUTE revoked from anon (**APPLIED & VERIFIED AGAINST LIVE SUPABASE**).
+8. **`favorites`:** Added user-isolated CRUD policy (**APPLIED & VERIFIED AGAINST LIVE SUPABASE**).
+9. **`knowledge_chunks`:** Added public read-only policy with mutation revoked (**APPLIED & VERIFIED AGAINST LIVE SUPABASE**).
+
+Live Supabase Security Advisor confirmed clean status: `{"result": {"lints": []}}` (**0 security advisories remaining**).
 
 Comprehensive documentation: [docs/SUPABASE_SECURITY_AUDIT.md](file:///d:/Bus_Sense_Ai/docs/SUPABASE_SECURITY_AUDIT.md).
 
@@ -102,9 +104,9 @@ Comprehensive documentation: [docs/SUPABASE_SECURITY_AUDIT.md](file:///d:/Bus_Se
 
 ## 4. Full Regression Test Verification Metrics
 
-| Test Suite | Framework | Tests Run | Passed | Skipped | Failed | Pass Rate |
+| Test Suite | Framework | Total Tests | Passed | Skipped | Failed | Pass Rate |
 |---|---|---|---|---|---|---|
-| **Backend Total** | Pytest 9.1 + Python 3.14 | 186 | 185 | 1 | 0 | **100%** |
+| **Backend Total** | Pytest 9.1 + Python 3.14 | 186 | 185 | 1 | 0 | **99.5%** |
 | - *Security & RBAC* | Pytest | 12 | 12 | 0 | 0 | 100% |
 | - *Persistence H2* | Pytest | 6 | 6 | 0 | 0 | 100% |
 | - *API Contract H3* | Pytest | 6 | 6 | 0 | 0 | 100% |
@@ -114,11 +116,13 @@ Comprehensive documentation: [docs/SUPABASE_SECURITY_AUDIT.md](file:///d:/Bus_Se
 | - *RAG AI Assistant H11* | Pytest | 29 | 29 | 0 | 0 | 100% |
 | - *Realtime & Notifications H12* | Pytest | 23 | 23 | 0 | 0 | 100% |
 | - *H13 Supabase Security* | Pytest | 12 | 12 | 0 | 0 | 100% |
-| **Authority Web Build** | Next.js 14 Production Build | 22 routes | 22 | 0 | 0 | **100%** |
-| **Authority Unit/Integration** | Node Native Test Runner | 22 tests | 22 | 0 | 0 | **100%** |
-| **Mobile Flutter Total** | Flutter Test (Riverpod + Widget) | 100 tests | 100 | 0 | 0 | **100%** |
+| - *Core & Conductor H5/H6* | Pytest | 32 | 32 | 0 | 0 | 100% |
+| **Authority Unit & Integration** | Node Native Test Runner (`node --test`) | 22 | 22 | 0 | 0 | **100%** |
+| **Mobile Flutter Total** | Flutter Test (`flutter test`) | 100 | 100 | 0 | 0 | **100%** |
+| **Total Automated Unit & Integration Tests** | | **308** | **307** | **1** | **0** | **99.7%** |
+| **Authority Web Production Build** *(Build check, not unit test)* | Next.js 14 Production Build (`next build`) | 22 routes | 22 routes compiled | 0 | 0 | **100%** |
 
-**Overall Verification: 308 automated checks passing with ZERO failures.**
+**Overall Verification: 307 passed and 1 skipped across 308 total test cases, plus 22 Next.js production build routes compiled with ZERO errors.**
 
 ---
 
