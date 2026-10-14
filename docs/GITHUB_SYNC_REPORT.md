@@ -32,19 +32,26 @@ This report documents the exhaustive repository audit, Git history analysis, pre
 
 | Phase | Title | Verified in Code | Test Count | Local Git Status | Remote GitHub Status |
 |---|---|---|---|---|---|
-| **H1** | Security & Authentication Hardening | YES | 13 backend tests | COMMITTED (`24b84cf`) | **PUBLISHED TO GITHUB** |
-| **H2** | Persistent Database Transactions | YES | 6 persistence tests | COMMITTED (`24b84cf`) | **PUBLISHED TO GITHUB** |
-| **H3** | Backend API Completion | YES | 6 API contract tests | COMMITTED (`24b84cf`) | **PUBLISHED TO GITHUB** |
-| **H4** | Unified Flutter Mobile Foundation | YES | 10 model tests | COMMITTED (`6be4f23`) | **PUBLISHED TO GITHUB** |
-| **H5** | Passenger Experience (Batches 1–4) | YES | 45 discovery + 11 ticketing + 11 AI + 14 profile tests | COMMITTED (`6be4f23`) | **PUBLISHED TO GITHUB** |
-| **H6** | Conductor Cockpit & Operations | YES | 15 mobile + 6 backend tests | COMMITTED (`6be4f23`, `24b84cf`) | **PUBLISHED TO GITHUB** |
-| **H7** | Authority Dynamic Integration | YES | 22 frontend + 9 backend tests | COMMITTED (`a15d8a2`, `24b84cf`) | **PUBLISHED TO GITHUB** |
-| **H8** | Computer Vision Occupancy Intelligence | YES | 22 CV backend tests | COMMITTED (`24b84cf`) | **PUBLISHED TO GITHUB** |
-| **H9** | Demand Prediction & Crowd Forecasting | YES | 17 prediction tests | COMMITTED (`24b84cf`) | **PUBLISHED TO GITHUB** |
-| **H10** | Smart Bus Recommendation Engine | YES | 27 recommendation tests | COMMITTED (`24b84cf`) | **PUBLISHED TO GITHUB** |
+| **H1** | Security & Authentication Hardening | YES | 13 backend tests (6 RBAC + 7 Core) | COMMITTED (`24b84cf`) | **PUBLISHED TO GITHUB** |
+| **H2** | Persistent Database Transactions | YES | 6 persistence backend tests | COMMITTED (`24b84cf`) | **PUBLISHED TO GITHUB** |
+| **H3** | Backend API Completion | YES | 6 API contract backend tests | COMMITTED (`24b84cf`) | **PUBLISHED TO GITHUB** |
+| **H4** | Unified Flutter Mobile Foundation | YES | 34 mobile tests (10 models + 18 core + 6 auth) | COMMITTED (`6be4f23`) | **PUBLISHED TO GITHUB** |
+| **H5** | Passenger Experience (Batches 1–4) | YES | 16 backend tests (8 AI + 8 profile) + 46 mobile tests | COMMITTED (`6be4f23`, `24b84cf`) | **PUBLISHED TO GITHUB** |
+| **H6** | Conductor Cockpit & Operations | YES | 6 backend tests + 15 mobile tests | COMMITTED (`6be4f23`, `24b84cf`) | **PUBLISHED TO GITHUB** |
+| **H7** | Authority Dynamic Integration | YES | 9 backend tests + 22 frontend integration tests | COMMITTED (`a15d8a2`, `24b84cf`) | **PUBLISHED TO GITHUB** |
+| **H8** | Computer Vision Occupancy Intelligence | YES | 22 CV backend tests (21 passed, 1 skipped) | COMMITTED (`24b84cf`) | **PUBLISHED TO GITHUB** |
+| **H9** | Demand Prediction & Crowd Forecasting | YES | 17 prediction backend tests | COMMITTED (`24b84cf`) | **PUBLISHED TO GITHUB** |
+| **H10** | Smart Bus Recommendation Engine | YES | 27 recommendation backend tests | COMMITTED (`24b84cf`) | **PUBLISHED TO GITHUB** |
 | **H11** | RAG AI Transport Assistant | YES | 29 RAG backend tests | COMMITTED (`24b84cf`) | **PUBLISHED TO GITHUB** |
-| **H12** | Realtime Data & Notifications | YES | 23 realtime tests + 4 mobile | COMMITTED (`24b84cf`, `6be4f23`) | **PUBLISHED TO GITHUB** |
-| **H13** | Full System Integration & Supabase Security | YES | 12 security tests + full suites | COMMITTED (`312c7f5`, `745c52c`) | **PUBLISHED TO GITHUB** |
+| **H12** | Realtime Data & Notifications | YES | 23 realtime backend tests + 4 mobile tests | COMMITTED (`24b84cf`, `6be4f23`) | **PUBLISHED TO GITHUB** |
+| **H13** | Full System Integration & Supabase Security | YES | 12 security backend tests + 1 mobile widget test | COMMITTED (`312c7f5`, `745c52c`) | **PUBLISHED TO GITHUB** |
+
+**Automated Test Suite Summary:**
+- **Backend Tests (Pytest):** 186 total tests (185 passed, 1 skipped, 0 failed across 14 modules)
+- **Authority Tests (Node runner):** 22 integration tests (22 passed across 13 suites)
+- **Mobile Tests (Flutter test):** 100 tests (100 passed across 10 test files)
+- **Combined Automated Tests:** 308 tests (307 passed, 1 skipped, 0 failed; 99.7% pass rate)
+- **Authority Production Build:** 22 Next.js routes compiled (distinct build verification check)
 
 ---
 

@@ -104,25 +104,42 @@ Comprehensive documentation: [docs/SUPABASE_SECURITY_AUDIT.md](file:///d:/Bus_Se
 
 ## 4. Full Regression Test Verification Metrics
 
-| Test Suite | Framework | Total Tests | Passed | Skipped | Failed | Pass Rate |
-|---|---|---|---|---|---|---|
-| **Backend Total** | Pytest 9.1 + Python 3.14 | 186 | 185 | 1 | 0 | **99.5%** |
-| - *Security & RBAC* | Pytest | 12 | 12 | 0 | 0 | 100% |
-| - *Persistence H2* | Pytest | 6 | 6 | 0 | 0 | 100% |
-| - *API Contract H3* | Pytest | 6 | 6 | 0 | 0 | 100% |
-| - *CV Occupancy H8* | Pytest | 22 | 21 | 1 | 0 | 100% |
-| - *Demand Prediction H9* | Pytest | 17 | 17 | 0 | 0 | 100% |
-| - *Recommendations H10* | Pytest | 27 | 27 | 0 | 0 | 100% |
-| - *RAG AI Assistant H11* | Pytest | 29 | 29 | 0 | 0 | 100% |
-| - *Realtime & Notifications H12* | Pytest | 23 | 23 | 0 | 0 | 100% |
-| - *H13 Supabase Security* | Pytest | 12 | 12 | 0 | 0 | 100% |
-| - *Core & Conductor H5/H6* | Pytest | 32 | 32 | 0 | 0 | 100% |
-| **Authority Unit & Integration** | Node Native Test Runner (`node --test`) | 22 | 22 | 0 | 0 | **100%** |
-| **Mobile Flutter Total** | Flutter Test (`flutter test`) | 100 | 100 | 0 | 0 | **100%** |
-| **Total Automated Unit & Integration Tests** | | **308** | **307** | **1** | **0** | **99.7%** |
-| **Authority Web Production Build** *(Build check, not unit test)* | Next.js 14 Production Build (`next build`) | 22 routes | 22 routes compiled | 0 | 0 | **100%** |
+### 4.1 Automated Test Execution Summary
+The automated verification harness comprises 308 individual test cases across three distinct test environments, along with a separate production build verification:
 
-**Overall Verification: 307 passed and 1 skipped across 308 total test cases, plus 22 Next.js production build routes compiled with ZERO errors.**
+- **Backend Pytest Suite:** 186 total tests (185 passed, 1 skipped, 0 failed across 14 test modules).
+- **Authority Dashboard Suite:** 22 integration tests (22 passed, 0 failed across 13 test suites via Node native test runner).
+- **Mobile Flutter Suite:** 100 widget and unit tests (100 passed, 0 failed across 10 test files).
+- **Combined Test Total:** 308 automated tests (307 passed, 1 skipped, 0 failed; 99.7% pass rate).
+- **Authority Web Production Build:** 22 routes compiled with zero errors (static route build verification, kept distinct from test assertions).
+
+### 4.2 Detailed Test Metrics Table
+
+| Test Suite / Module | Framework | Total Tests | Passed | Skipped | Failed | Pass Rate |
+|---|---|---|---|---|---|---|
+| **Backend Test Suite (Pytest)** | Pytest 9.1 + Python 3.14 | **186** | **185** | **1** | **0** | **99.5%** |
+| - `test_backend.py` (Core Foundation) | Pytest | 7 | 7 | 0 | 0 | 100% |
+| - `test_security_rbac.py` (Security & RBAC) | Pytest | 6 | 6 | 0 | 0 | 100% |
+| - `test_persistence_h2.py` (Persistence H2) | Pytest | 6 | 6 | 0 | 0 | 100% |
+| - `test_api_h3.py` (API Contract H3) | Pytest | 6 | 6 | 0 | 0 | 100% |
+| - `test_ai_assistant_h5.py` (AI Assistant H5) | Pytest | 8 | 8 | 0 | 0 | 100% |
+| - `test_user_profile_h5.py` (User Profile H5) | Pytest | 8 | 8 | 0 | 0 | 100% |
+| - `test_conductor_h6.py` (Conductor Cockpit H6) | Pytest | 6 | 6 | 0 | 0 | 100% |
+| - `test_authority_h7.py` (Authority Operations H7) | Pytest | 9 | 9 | 0 | 0 | 100% |
+| - `test_cv_occupancy_h8.py` (CV Occupancy H8) | Pytest | 22 | 21 | 1 | 0 | 100% |
+| - `test_demand_prediction_h9.py` (Demand Forecasting H9) | Pytest | 17 | 17 | 0 | 0 | 100% |
+| - `test_recommendation_h10.py` (Smart Recommendations H10) | Pytest | 27 | 27 | 0 | 0 | 100% |
+| - `test_rag_ai_h11.py` (RAG AI Transport Assistant H11) | Pytest | 29 | 29 | 0 | 0 | 100% |
+| - `test_realtime_notifications_h12.py` (Realtime Stream & Notifications H12) | Pytest | 23 | 23 | 0 | 0 | 100% |
+| - `test_supabase_security_h13.py` (Supabase RLS & Function Hardening H13) | Pytest | 12 | 12 | 0 | 0 | 100% |
+| **Authority Unit & Integration** | Node Native Test Runner (`node --test`) | **22** | **22** | **0** | **0** | **100%** |
+| **Mobile Flutter Suite** | Flutter Test (`flutter test`) | **100** | **100** | **0** | **0** | **100%** |
+| **Total Automated Unit & Integration Tests** | | **308** | **307** | **1** | **0** | **99.7%** |
+| **Authority Web Production Build** *(Build check, not unit test)* | Next.js 14 Production Build (`next build`) | 22 routes | 22 compiled | 0 | 0 | **100%** |
+
+*Note on Historical Discrepancy Resolution:* An earlier draft table recorded `test_security_rbac.py` as 12 tests (instead of its actual 6 tests, conflating it with `test_supabase_security_h13.py`'s 12 tests) and omitted 5 individual backend modules (`test_conductor_h6.py`, `test_authority_h7.py`, `test_ai_assistant_h5.py`, `test_user_profile_h5.py`, and `test_backend.py`, totaling 38 tests). Adding those 38 omitted tests to the 153 passed from that draft table yielded 191 passed (153 + 38 = 191). When corrected for the true count of `test_security_rbac.py` (12 - 6 = 6 excess tests removed), the actual unique sum across all 14 backend test modules is exactly 185 passed and 1 skipped (191 - 6 = 185), perfectly matching the 186 collected pytest items.
+
+**Overall Verification: 307 passed and 1 skipped across 308 total automated test cases, plus 22 Next.js production build routes compiled with ZERO errors.**
 
 ---
 
