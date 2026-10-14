@@ -84,17 +84,17 @@ The unified realtime event delivery subsystem was verified end-to-end:
 
 ## 3. Supabase Security Audit Summary
 
-A dedicated audit of project `lqegmqgkymstycpzplld` remediated 9 vulnerabilities:
+A dedicated audit of project `lqegmqgkymstycpzplld` addressed 9 vulnerabilities:
 
-1. **`roles`:** RLS enabled; public read-only policy created.
-2. **`bus_recommendations`:** RLS enabled; user ownership policy created.
-3. **`notifications`:** RLS enabled; open `USING (true)` policy eliminated; user ownership enforced for read/update/delete.
-4. **`journey_history`:** RLS enabled; user ownership enforced.
-5. **`ai_conversations`:** RLS enabled; user ownership enforced.
-6. **`ai_messages`:** RLS enabled; conversation ownership enforced.
-7. **`validate_ticket_atomic`:** Added explicit `SET search_path = public, pg_temp;` to eliminate function mutable search path vulnerability.
-8. **`favorites`:** Added user ownership policy.
-9. **`knowledge_chunks`:** Added public read-only policy.
+1. **`roles`:** RLS enabled; read-only policy for authenticated/anon; mutation revoked (`MIGRATION CREATED`).
+2. **`bus_recommendations`:** RLS enabled; corridor template read + strict user ownership on write (`MIGRATION CREATED`).
+3. **`notifications`:** RLS enabled; permissive `USING (true)` and `WITH CHECK (true)` eliminated; strict user ownership enforced (`MIGRATION CREATED`).
+4. **`journey_history`:** RLS enabled; user ownership enforced (`MIGRATION CREATED`).
+5. **`ai_conversations`:** RLS enabled; unauthenticated shared NULL conversation exposure eliminated; user ownership enforced (`MIGRATION CREATED`).
+6. **`ai_messages`:** RLS enabled; parent conversation ownership enforced (`MIGRATION CREATED`).
+7. **`validate_ticket_atomic`:** Explicit `SET search_path = public, pg_temp;` applied, caller RBAC check added, and EXECUTE revoked from anon (**APPLIED & VERIFIED AGAINST LIVE SUPABASE**).
+8. **`favorites`:** Added user-isolated CRUD policy (`MIGRATION CREATED`).
+9. **`knowledge_chunks`:** Added public read-only policy with mutation revoked (`MIGRATION CREATED`).
 
 Comprehensive documentation: [docs/SUPABASE_SECURITY_AUDIT.md](file:///d:/Bus_Sense_Ai/docs/SUPABASE_SECURITY_AUDIT.md).
 

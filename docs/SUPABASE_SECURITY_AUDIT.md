@@ -31,7 +31,7 @@ All 9 vulnerabilities have been remediated in application code and codified into
 | **SEC-004** | RLS Disabled in Public Schema | **HIGH (ERROR)** | `public.journey_history` | MIGRATION CREATED / OPERATOR ACTION REQUIRED |
 | **SEC-005** | RLS Disabled in Public Schema | **HIGH (ERROR)** | `public.ai_conversations` | MIGRATION CREATED / OPERATOR ACTION REQUIRED |
 | **SEC-006** | RLS Disabled in Public Schema | **HIGH (ERROR)** | `public.ai_messages` | MIGRATION CREATED / OPERATOR ACTION REQUIRED |
-| **SEC-007** | Mutable Function Search Path | **HIGH (WARN)** | `public.validate_ticket_atomic` | MIGRATION CREATED / OPERATOR ACTION REQUIRED |
+| **SEC-007** | Mutable Function Search Path | **HIGH (WARN)** | `public.validate_ticket_atomic` | **APPLIED & VERIFIED AGAINST LIVE SUPABASE** |
 | **SEC-008** | RLS Enabled With No Policy | **MEDIUM (INFO)** | `public.favorites` | MIGRATION CREATED / OPERATOR ACTION REQUIRED |
 | **SEC-009** | RLS Enabled With No Policy | **LOW (INFO)** | `public.knowledge_chunks` | MIGRATION CREATED / OPERATOR ACTION REQUIRED |
 
@@ -229,7 +229,7 @@ A recursive AST and regex scan across all client bundles ([frontend/app/](file:/
 | SEC-004 (`journey_history` RLS) | FIXED IN CODE | MIGRATION CREATED (`006`) | OPERATOR ACTION REQUIRED |
 | SEC-005 (`ai_conversations` RLS) | FIXED IN CODE | MIGRATION CREATED (`006`) | OPERATOR ACTION REQUIRED |
 | SEC-006 (`ai_messages` RLS) | FIXED IN CODE | MIGRATION CREATED (`006`) | OPERATOR ACTION REQUIRED |
-| SEC-007 (`validate_ticket_atomic` search_path) | FIXED IN CODE | MIGRATION CREATED (`006`) | OPERATOR ACTION REQUIRED |
+| SEC-007 (`validate_ticket_atomic` search_path) | FIXED IN CODE | MIGRATION CREATED (`006`) | **APPLIED & VERIFIED AGAINST LIVE SUPABASE** |
 | SEC-008 (`favorites` policy) | FIXED IN CODE | MIGRATION CREATED (`006`) | OPERATOR ACTION REQUIRED |
 | SEC-009 (`knowledge_chunks` policy) | FIXED IN CODE | MIGRATION CREATED (`006`) | OPERATOR ACTION REQUIRED |
 
