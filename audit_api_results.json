@@ -1,0 +1,188 @@
+{
+  "all_routes": [
+    {
+      "path": "/",
+      "methods": [
+        "GET"
+      ],
+      "name": "root"
+    },
+    {
+      "path": "/health",
+      "methods": [
+        "GET"
+      ],
+      "name": "health_check"
+    }
+  ],
+  "test_results": [
+    {
+      "method": "GET",
+      "path": "/health",
+      "status_code": 200,
+      "success": true,
+      "response_sample": "{\"status\":\"healthy\",\"supabase_connected\":true,\"supabase_project\":\"https://lqegmqgkymstycpzplld.supabase.co\",\"active_buses\":3,\"timestamp\":\"2026-09-26T1"
+    },
+    {
+      "method": "GET",
+      "path": "/",
+      "status_code": 200,
+      "success": true,
+      "response_sample": "{\"platform\":\"BusSense AI Intelligence Platform\",\"status\":\"OPERATIONAL\",\"city\":\"Kochi\",\"cv_mode\":\"SIMULATION\",\"demo_mode\":true,\"version\":\"1.0.0\",\"docs_"
+    },
+    {
+      "method": "GET",
+      "path": "/api/buses",
+      "status_code": 200,
+      "success": true,
+      "response_sample": "{\"success\":true,\"message\":\"Active fleet telemetry retrieved\",\"data\":[{\"bus_id\":\"a1111111-aaaa-aaaa-aaaa-aaaaaaaaaaaa\",\"bus_number\":\"205\",\"registration"
+    },
+    {
+      "method": "GET",
+      "path": "/api/buses/205",
+      "status_code": 200,
+      "success": true,
+      "response_sample": "{\"success\":true,\"message\":\"Telemetry for Bus 205\",\"data\":{\"bus_id\":\"a1111111-aaaa-aaaa-aaaa-aaaaaaaaaaaa\",\"bus_number\":\"205\",\"registration_number\":\"KL"
+    },
+    {
+      "method": "GET",
+      "path": "/api/routes",
+      "status_code": 200,
+      "success": true,
+      "response_sample": "{\"success\":true,\"message\":\"Operation successful\",\"data\":[{\"id\":\"00000000-0000-0000-0000-000000000101\",\"route_number\":\"205\",\"route_name\":\"Aluva Metro \u2794"
+    },
+    {
+      "method": "GET",
+      "path": "/api/routes/route-12",
+      "status_code": 404,
+      "success": false,
+      "response_sample": "{\"detail\":\"Route not found\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/stops",
+      "status_code": 200,
+      "success": true,
+      "response_sample": "{\"success\":true,\"message\":\"Operation successful\",\"data\":[{\"id\":\"00000000-0000-0000-0000-000000000001\",\"stop_code\":\"ALV-METRO\",\"stop_name\":\"Aluva Metro"
+    },
+    {
+      "method": "GET",
+      "path": "/api/occupancy/current/205",
+      "status_code": 404,
+      "success": false,
+      "response_sample": "{\"detail\":\"Not Found\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/occupancy/predictions",
+      "status_code": 404,
+      "success": false,
+      "response_sample": "{\"detail\":\"Not Found\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/recommendations",
+      "status_code": 404,
+      "success": false,
+      "response_sample": "{\"detail\":\"Not Found\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/tickets/book",
+      "status_code": 422,
+      "success": false,
+      "response_sample": "{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"route_number\"],\"msg\":\"Field required\",\"input\":{\"route_id\":\"route-12\",\"bus_number\":\"205\",\"origin_stop\":\"Alu"
+    },
+    {
+      "method": "GET",
+      "path": "/api/incidents",
+      "status_code": 200,
+      "success": true,
+      "response_sample": "{\"success\":true,\"message\":\"Operation successful\",\"data\":[{\"id\":\"inc-001\",\"category\":\"ROUTE_OBSTRUCTION\",\"severity\":\"WARNING\",\"title\":\"Road Maintenance"
+    },
+    {
+      "method": "POST",
+      "path": "/api/incidents",
+      "status_code": 405,
+      "success": false,
+      "response_sample": "{\"detail\":\"Method Not Allowed\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/analytics/summary",
+      "status_code": 404,
+      "success": false,
+      "response_sample": "{\"detail\":\"Not Found\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/analytics/comfort-index",
+      "status_code": 404,
+      "success": false,
+      "response_sample": "{\"detail\":\"Not Found\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/ai/query",
+      "status_code": 404,
+      "success": false,
+      "response_sample": "{\"detail\":\"Not Found\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/trips",
+      "status_code": 404,
+      "success": false,
+      "response_sample": "{\"detail\":\"Not Found\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/locations",
+      "status_code": 404,
+      "success": false,
+      "response_sample": "{\"detail\":\"Not Found\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/crowd",
+      "status_code": 404,
+      "success": false,
+      "response_sample": "{\"detail\":\"Not Found\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/predictions",
+      "status_code": 404,
+      "success": false,
+      "response_sample": "{\"detail\":\"Not Found\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/tickets",
+      "status_code": 404,
+      "success": false,
+      "response_sample": "{\"detail\":\"Not Found\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/payments",
+      "status_code": 404,
+      "success": false,
+      "response_sample": "{\"detail\":\"Not Found\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/alerts",
+      "status_code": 404,
+      "success": false,
+      "response_sample": "{\"detail\":\"Not Found\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/notifications",
+      "status_code": 404,
+      "success": false,
+      "response_sample": "{\"detail\":\"Not Found\"}"
+    }
+  ]
+}

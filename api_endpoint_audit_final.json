@@ -1,0 +1,234 @@
+[
+  {
+    "method": "GET",
+    "path": "/health",
+    "implemented": true,
+    "status_code": 200,
+    "result": "VERIFIED",
+    "sample": "{\"status\":\"healthy\",\"supabase_connected\":true,\"supabase_project\":\"https://lqegmqgkymstycpzplld.supabase.co\",\"active_buse"
+  },
+  {
+    "method": "GET",
+    "path": "/",
+    "implemented": true,
+    "status_code": 200,
+    "result": "VERIFIED",
+    "sample": "{\"platform\":\"BusSense AI Intelligence Platform\",\"status\":\"OPERATIONAL\",\"city\":\"Kochi\",\"cv_mode\":\"SIMULATION\",\"demo_mode\""
+  },
+  {
+    "method": "POST",
+    "path": "/api/auth/login",
+    "implemented": true,
+    "status_code": 200,
+    "result": "VERIFIED",
+    "sample": "{\"success\":true,\"message\":\"Authentication successful\",\"data\":{\"access_token\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzd"
+  },
+  {
+    "method": "GET",
+    "path": "/api/auth/me",
+    "implemented": true,
+    "status_code": 200,
+    "result": "VERIFIED",
+    "sample": "{\"success\":true,\"message\":\"Operation successful\",\"data\":{\"id\":\"11111111-1111-1111-1111-111111111111\",\"role\":\"PASSENGER\","
+  },
+  {
+    "method": "POST",
+    "path": "/api/auth/switch-demo-role",
+    "implemented": true,
+    "status_code": 200,
+    "result": "VERIFIED",
+    "sample": "{\"success\":true,\"message\":\"Switched role to DRIVER_CONDUCTOR\",\"data\":{\"access_token\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVC"
+  },
+  {
+    "method": "GET",
+    "path": "/api/buses",
+    "implemented": true,
+    "status_code": 200,
+    "result": "VERIFIED",
+    "sample": "{\"success\":true,\"message\":\"Active fleet telemetry retrieved\",\"data\":[{\"bus_id\":\"a1111111-aaaa-aaaa-aaaa-aaaaaaaaaaaa\",\"b"
+  },
+  {
+    "method": "GET",
+    "path": "/api/buses/205",
+    "implemented": true,
+    "status_code": 200,
+    "result": "VERIFIED",
+    "sample": "{\"success\":true,\"message\":\"Telemetry for Bus 205\",\"data\":{\"bus_id\":\"a1111111-aaaa-aaaa-aaaa-aaaaaaaaaaaa\",\"bus_number\":\""
+  },
+  {
+    "method": "GET",
+    "path": "/api/routes",
+    "implemented": true,
+    "status_code": 200,
+    "result": "VERIFIED",
+    "sample": "{\"success\":true,\"message\":\"Operation successful\",\"data\":[{\"id\":\"00000000-0000-0000-0000-000000000101\",\"route_number\":\"20"
+  },
+  {
+    "method": "GET",
+    "path": "/api/routes/205",
+    "implemented": true,
+    "status_code": 200,
+    "result": "VERIFIED",
+    "sample": "{\"success\":true,\"message\":\"Operation successful\",\"data\":{\"id\":\"00000000-0000-0000-0000-000000000101\",\"route_number\":\"205"
+  },
+  {
+    "method": "GET",
+    "path": "/api/stops",
+    "implemented": true,
+    "status_code": 200,
+    "result": "VERIFIED",
+    "sample": "{\"success\":true,\"message\":\"Operation successful\",\"data\":[{\"id\":\"00000000-0000-0000-0000-000000000001\",\"stop_code\":\"ALV-M"
+  },
+  {
+    "method": "GET",
+    "path": "/api/occupancy/forecast/205",
+    "implemented": true,
+    "status_code": 200,
+    "result": "VERIFIED",
+    "sample": "{\"success\":true,\"message\":\"Crowd forecast trajectory for Bus 205\",\"data\":[{\"time_offset\":\"NOW\",\"minutes_from_now\":0,\"pre"
+  },
+  {
+    "method": "GET",
+    "path": "/api/occupancy/live/205",
+    "implemented": true,
+    "status_code": 200,
+    "result": "VERIFIED",
+    "sample": "{\"success\":true,\"message\":\"Operation successful\",\"data\":{\"bus_number\":\"205\",\"passenger_count\":28,\"capacity\":55,\"occupanc"
+  },
+  {
+    "method": "GET",
+    "path": "/api/recommendations/plan?origin=Aluva&destination=Infopark",
+    "implemented": true,
+    "status_code": 200,
+    "result": "VERIFIED",
+    "sample": "{\"success\":true,\"message\":\"Journey recommendation generated successfully\",\"data\":{\"origin_stop\":\"Aluva\",\"destination_sto"
+  },
+  {
+    "method": "POST",
+    "path": "/api/tickets/book",
+    "implemented": true,
+    "status_code": 200,
+    "result": "VERIFIED",
+    "sample": "{\"success\":true,\"message\":\"Ticket booked successfully\",\"data\":{\"id\":\"ticket-e17f\",\"ticket_number\":\"BS-KL-2026-E17F\",\"pas"
+  },
+  {
+    "method": "GET",
+    "path": "/api/tickets/my",
+    "implemented": true,
+    "status_code": 200,
+    "result": "VERIFIED",
+    "sample": "{\"success\":true,\"message\":\"Operation successful\",\"data\":[{\"id\":\"99999999-9999-9999-9999-999999999999\",\"ticket_number\":\"B"
+  },
+  {
+    "method": "GET",
+    "path": "/api/incidents",
+    "implemented": true,
+    "status_code": 200,
+    "result": "VERIFIED",
+    "sample": "{\"success\":true,\"message\":\"Operation successful\",\"data\":[{\"id\":\"inc-001\",\"category\":\"ROUTE_OBSTRUCTION\",\"severity\":\"WARN"
+  },
+  {
+    "method": "POST",
+    "path": "/api/incidents/report",
+    "implemented": true,
+    "status_code": 200,
+    "result": "VERIFIED",
+    "sample": "{\"success\":true,\"message\":\"Incident reported to dispatch central\",\"data\":{\"id\":\"inc-8e692f\",\"category\":\"CONGESTION\",\"sev"
+  },
+  {
+    "method": "GET",
+    "path": "/api/incidents/alerts",
+    "implemented": true,
+    "status_code": 200,
+    "result": "VERIFIED",
+    "sample": "{\"success\":true,\"message\":\"Operation successful\",\"data\":[{\"id\":\"alt-001\",\"title\":\"Priority Corridor Active\",\"message\":\"B"
+  },
+  {
+    "method": "GET",
+    "path": "/api/analytics/command-overview",
+    "implemented": true,
+    "status_code": 200,
+    "result": "VERIFIED",
+    "sample": "{\"success\":true,\"message\":\"Authority command overview telemetry retrieved\",\"data\":{\"network_status\":\"OPTIMAL_FLOW\",\"acti"
+  },
+  {
+    "method": "GET",
+    "path": "/api/analytics/ai-decision-queue",
+    "implemented": true,
+    "status_code": 200,
+    "result": "VERIFIED",
+    "sample": "{\"success\":true,\"message\":\"Operation successful\",\"data\":[{\"id\":\"dec-001\",\"trigger\":\"Predictive Peak Inflow + Showers at "
+  },
+  {
+    "method": "POST",
+    "path": "/api/ai/chat",
+    "implemented": true,
+    "status_code": 200,
+    "result": "VERIFIED",
+    "sample": "{\"success\":true,\"message\":\"Assistant response generated\",\"data\":{\"answer\":\"Bus 205 is a KSRTC Fast Passenger service bet"
+  },
+  {
+    "method": "GET",
+    "path": "/api/ai/knowledge-sources",
+    "implemented": true,
+    "status_code": 200,
+    "result": "VERIFIED",
+    "sample": "{\"success\":true,\"message\":\"Operation successful\",\"data\":[{\"id\":\"KB-CROWD\",\"title\":\"BusSense AI Computer Vision & Privacy"
+  },
+  {
+    "method": "GET",
+    "path": "/api/trips",
+    "implemented": false,
+    "status_code": 404,
+    "result": "REJECTED/ERROR",
+    "sample": "{\"detail\":\"Not Found\"}"
+  },
+  {
+    "method": "GET",
+    "path": "/api/locations",
+    "implemented": false,
+    "status_code": 404,
+    "result": "REJECTED/ERROR",
+    "sample": "{\"detail\":\"Not Found\"}"
+  },
+  {
+    "method": "GET",
+    "path": "/api/crowd",
+    "implemented": false,
+    "status_code": 404,
+    "result": "REJECTED/ERROR",
+    "sample": "{\"detail\":\"Not Found\"}"
+  },
+  {
+    "method": "GET",
+    "path": "/api/predictions",
+    "implemented": false,
+    "status_code": 404,
+    "result": "REJECTED/ERROR",
+    "sample": "{\"detail\":\"Not Found\"}"
+  },
+  {
+    "method": "GET",
+    "path": "/api/payments",
+    "implemented": false,
+    "status_code": 404,
+    "result": "REJECTED/ERROR",
+    "sample": "{\"detail\":\"Not Found\"}"
+  },
+  {
+    "method": "GET",
+    "path": "/api/alerts",
+    "implemented": false,
+    "status_code": 404,
+    "result": "REJECTED/ERROR",
+    "sample": "{\"detail\":\"Not Found\"}"
+  },
+  {
+    "method": "GET",
+    "path": "/api/notifications",
+    "implemented": false,
+    "status_code": 404,
+    "result": "REJECTED/ERROR",
+    "sample": "{\"detail\":\"Not Found\"}"
+  }
+]
