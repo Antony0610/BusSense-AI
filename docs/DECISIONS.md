@@ -108,3 +108,26 @@ This document records the architectural and engineering trade-offs made during t
 - **Alternatives Considered:**
   - *WebSocket Only:* Completely breaks if client proxy forbids persistent socket connections.
   - *HTTP Polling Only:* Higher server overhead and lacks true sub-second reactivity.
+
+---
+
+## ADR-011 — Strict Production Secrets, Dynamic CORS & Demo Account Isolation
+- **Status:** Accepted
+- **Date:** 2026-10-17
+- **Decision:** Enforce production configuration validation at application startup via Pydantic model validators: reject weak/fallback `SECRET_KEY` (< 32 chars, prototype phrases), normalize dynamic `ALLOWED_ORIGINS` (disallow wildcard with credentials), and lock demo accounts behind server-side production checks.
+- **Reason:** Prevents accidental deployment of default credentials, unauthorized cross-origin credentialed requests, or prototype authentication bypasses in production environments.
+- **Alternatives Considered:**
+  - *Runtime Warnings:* Soft warnings allow insecure configurations to continue serving traffic unnoticed.
+  - *Static Hardcoded CORS:* Inflexible across varying staging and production hostnames.
+
+---
+
+## ADR-012 — Container Health Probes, Error Sanitization & Backend RPC Permissions
+- **Status:** Accepted
+- **Date:** 2026-10-17
+- **Decision:** Implement decoupled `/health/live` (process alive) and `/health/ready` (dependency check with 2.0s timeout) endpoints; sanitize unhandled 500 errors with `X-Request-ID` correlation; and resolve the `validate_ticket_atomic` RPC permission mismatch using backend-only service-role authorization while maintaining caller RBAC checks.
+- **Reason:** Decoupled health probes prevent orchestrators from prematurely killing healthy containers during transient database blips. Sanitized 500 errors prevent internal traceback/credential leaks. Privileged backend RPC execution resolves 42501 permission errors without granting public EXECUTE or weakening database RLS.
+- **Alternatives Considered:**
+  - *Re-granting EXECUTE to anon/PUBLIC:* Insecure; allows direct unauthenticated execution of atomic stored procedure.
+  - *Single Health Check:* Causes orchestrators to restart servers whenever external database has a momentary delay.
+

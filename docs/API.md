@@ -539,3 +539,70 @@ All endpoints return JSON responses adhering to Pydantic v2 data models.
 - **Authentication:** Bearer JWT required (`AUTHORITY`).
 - **Role Boundary:** `PASSENGER` and `DRIVER_CONDUCTOR` are rejected with `403 Forbidden`.
 
+---
+
+## 18. System Health, Probes & Observability
+
+### 18.1 `GET /health/live`
+- **Purpose:** Container orchestrator liveness probe (Docker / Kubernetes / ECS).
+- **Authentication:** Public
+- **Behavior:** Returns HTTP 200 while process is responsive. Strictly zero external dependencies.
+- **Response (`200 OK`):**
+  ```json
+  {
+    "status": "alive",
+    "timestamp": "2026-10-17T08:00:00.000000+00:00",
+    "version": "1.0.0"
+  }
+  ```
+
+### 18.2 `GET /health/ready`
+- **Purpose:** Ingress traffic readiness probe checking genuine required database dependencies.
+- **Authentication:** Public
+- **Behavior:** Pings Supabase PostgreSQL with bounded 2.0s timeout. Returns 200 when ready, 503 when degraded.
+- **Response (`200 OK`):**
+  ```json
+  {
+    "status": "ready",
+    "database": "connected",
+    "timestamp": "2026-10-17T08:00:00.000000+00:00",
+    "version": "1.0.0"
+  }
+  ```
+- **Response (`503 Service Unavailable`):**
+  ```json
+  {
+    "status": "unready",
+    "database": "disconnected",
+    "detail": "Critical database dependency unreachable",
+    "timestamp": "2026-10-17T08:00:00.000000+00:00",
+    "version": "1.0.0"
+  }
+  ```
+
+### 18.3 `GET /health`
+- **Purpose:** Backward-compatible health check endpoint.
+- **Authentication:** Public
+- **Response (`200 OK`):**
+  ```json
+  {
+    "status": "healthy",
+    "supabase_connected": true,
+    "active_buses": 3,
+    "timestamp": "2026-10-17T08:00:00.000000+00:00"
+  }
+  ```
+
+### 18.4 Request Correlation & Sanitized Error Protocol
+- **Header:** `X-Request-ID` is extracted or generated for every HTTP request and returned in response headers.
+- **Unhandled Exceptions (`500 Internal Server Error`):**
+  ```json
+  {
+    "error": "Internal server error",
+    "code": "INTERNAL_SERVER_ERROR",
+    "message": "An unexpected server error occurred. Please contact support with this request ID.",
+    "request_id": "4d7e89ab-1234-5678-9abc-def012345678",
+    "timestamp": "2026-10-17T08:00:00.000000+00:00"
+  }
+  ```
+

@@ -36,8 +36,9 @@ async def login(credentials: LoginRequest):
     """
     matched = None
     
-    # 1. In development / demo mode, check controlled development credentials
-    if settings.DEMO_MODE or settings.ENVIRONMENT == "development":
+    # 1. In development / demo mode, check controlled development credentials.
+    # Strictly disabled in production or when DEMO_MODE is False.
+    if settings.ENVIRONMENT != "production" and settings.DEMO_MODE:
         for acc in DEV_ACCOUNTS.values():
             if acc["email"].lower() == credentials.email.lower():
                 matched = acc

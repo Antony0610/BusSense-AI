@@ -2,14 +2,23 @@
 BusSense AI - Core FastAPI Intelligence Application
 Climate-smart public transit intelligence platform.
 Core flow: SEE -> SENSE -> PREDICT -> RECOMMEND -> OPTIMIZE
+Hardened for Production Readiness (H14):
+- Strict startup environment and security validation
+- Standardized container orchestrator probes (/health/live, /health/ready with 200/503)
+- Correlation ID middleware (X-Request-ID)
+- Centralized sanitized error handling preventing internal/traceback leakage
+- Structured Python logging
 """
 import asyncio
+import uuid
 from typing import Optional
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request, Response, status
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
+from app.core.logging import setup_logging, get_logger
 from app.services.gps_simulator import gps_simulator
 from app.api import (
     auth,
@@ -34,8 +43,14 @@ from app.api import (
     notifications
 )
 from app.schemas.realtime import RealtimeEvent, RealtimeEventType
+from app.schemas.common import DataOrigin
 from app.services.realtime_service import realtime_service
 from app.core.security import get_current_user
+from app.core.supabase import supabase_client
+
+# Initialize structured logging
+setup_logging()
+logger = get_logger("bussense.main")
 
 
 # Active WebSocket connections for live telemetry broadcast
@@ -122,18 +137,23 @@ async def run_simulation_loop():
                             "is_active": False
                         })
         except Exception as e:
-            print(f"[Simulation Error] {e}")
+            logger.error("[Simulation Error] %s", str(e))
         await asyncio.sleep(settings.SIMULATION_INTERVAL_SECONDS)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: Launch background simulation worker
+    # Startup: Validate environment configuration
+    settings.validate_security_and_environment()
+    logger.info(
+        "[BusSense AI] Application starting in environment: %s (debug=%s, demo_mode=%s)",
+        settings.ENVIRONMENT, settings.DEBUG, settings.DEMO_MODE
+    )
     sim_task = asyncio.create_task(run_simulation_loop())
-    print("[BusSense AI] Background GPS & Occupancy simulation loop started.")
+    logger.info("[BusSense AI] Background GPS & Occupancy simulation loop started.")
     yield
     # Shutdown: Cancel simulation worker
     sim_task.cancel()
-    print("[BusSense AI] Background simulation stopped.")
+    logger.info("[BusSense AI] Background simulation stopped.")
 
 app = FastAPI(
     title="BusSense AI Platform API",
@@ -142,7 +162,31 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-from app.core.supabase import supabase_client
+# Correlation ID Middleware (attaches and preserves X-Request-ID header)
+@app.middleware("http")
+async def correlation_id_middleware(request: Request, call_next):
+    request_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
+    request.state.request_id = request_id
+    response = await call_next(request)
+    response.headers["X-Request-ID"] = request_id
+    return response
+
+# Centralized Unhandled Exception Handler (Prevents stack trace / database internals leakage)
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    request_id = getattr(request.state, "request_id", str(uuid.uuid4()))
+    logger.error("Unhandled server exception [request_id=%s]: %s", request_id, str(exc), exc_info=True)
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={
+            "error": "Internal server error",
+            "code": "INTERNAL_SERVER_ERROR",
+            "message": "An unexpected server error occurred. Please contact support with this request ID.",
+            "request_id": request_id,
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        },
+        headers={"X-Request-ID": request_id}
+    )
 
 # CORS Middleware with restricted configured origins (Never wildcard with credentials)
 app.add_middleware(
@@ -189,13 +233,54 @@ async def root():
         "data_origin_standard": "All synthetic values strictly labeled as SIMULATED / PREDICTION / RECOMMENDATION"
     }
 
-@app.get("/health")
+@app.get("/health/live", tags=["System Health"])
+async def liveness_probe():
+    """
+    Liveness probe for container orchestrators (Docker / Kubernetes / ECS).
+    Returns HTTP 200 while process is responsive. Does not check external dependencies.
+    """
+    return {
+        "status": "alive",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "version": "1.0.0"
+    }
+
+@app.get("/health/ready", tags=["System Health"])
+async def readiness_probe(response: Response):
+    """
+    Readiness probe checking genuine critical dependencies (Supabase PostgreSQL).
+    Returns HTTP 200 when ready to accept traffic; returns HTTP 503 when degraded.
+    Bounded 2.0-second timeout; sanitized without leaking credentials or SQL details.
+    """
+    is_connected = await supabase_client.ping(timeout=2.0)
+    now_iso = datetime.now(timezone.utc).isoformat()
+    if is_connected:
+        return {
+            "status": "ready",
+            "database": "connected",
+            "timestamp": now_iso,
+            "version": "1.0.0"
+        }
+    else:
+        response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+        return {
+            "status": "unready",
+            "database": "disconnected",
+            "detail": "Critical database dependency unreachable",
+            "timestamp": now_iso,
+            "version": "1.0.0"
+        }
+
+@app.get("/health", tags=["System Health"])
 async def health_check():
-    is_connected = await supabase_client.ping()
+    """
+    Backwards-compatible health check endpoint.
+    Sanitized to prevent internal URL/credential leakage.
+    """
+    is_connected = await supabase_client.ping(timeout=2.5)
     return {
         "status": "healthy" if is_connected else "degraded",
         "supabase_connected": is_connected,
-        "supabase_project": settings.SUPABASE_URL,
         "active_buses": len(gps_simulator.fleet_state),
         "timestamp": datetime.now(timezone.utc).isoformat()
     }

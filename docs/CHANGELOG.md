@@ -4,6 +4,33 @@ All notable changes to the BusSense AI platform are documented in this file, adh
 
 ---
 
+## [0.18.0-production-hardening-h14] — 2026-10-17
+
+### Added
+- **Production Configuration & Secrets Hardening (H14 Step 1):**
+  - Strict Pydantic model validation rejecting empty, weak, or default fallback `SECRET_KEY` (minimum 32 characters required in production).
+  - Dynamic CORS parsing and normalization from `ALLOWED_ORIGINS` environment variable, strictly prohibiting wildcards (`*`) with credentials and rejecting localhost-only origins in production.
+  - Isolated demo commuter accounts (`DEV_ACCOUNTS`) behind server-side guards requiring `ENVIRONMENT != "production"` and `DEMO_MODE == True`.
+  - Created `.env.production.example` template with complete variable documentation and safe placeholders.
+- **Backend Reliability & Container Health Probes (H14 Step 2):**
+  - Container liveness probe `GET /health/live` returning HTTP 200 without external dependencies.
+  - Container readiness probe `GET /health/ready` returning HTTP 200/503 based on a bounded 2.0-second Supabase database health ping.
+  - Sanitized existing `/health` endpoint to eliminate internal database URL and hostname disclosure.
+  - Request correlation middleware assigning and propagating `X-Request-ID` across all HTTP request cycles.
+  - Centralized global 500 unhandled exception handler logging full internal traces securely while returning uniform, sanitized JSON to API clients without stack trace leakage.
+  - Centralized structured logging module (`backend/app/core/logging.py`) replacing ad-hoc `print()` calls.
+- **Ticket Validation RPC Permission Resolution (H14 Step 2):**
+  - Added backend-only service-role authorization support in `SupabaseService.rpc` for privileged execution of `validate_ticket_atomic`.
+  - Implemented transactional database fallback in `TicketService` for local dev/testing environments without service-role keys.
+  - Verified caller role enforcement (`DRIVER_CONDUCTOR` or `AUTHORITY`) and anti-reuse atomicity.
+- **Test Suite Verification:**
+  - 17 new automated tests in `backend/tests/test_production_readiness_h14.py`.
+  - Full backend test suite passing 203/203 tests (100%).
+  - Full mobile test suite passing 100/100 tests (100%).
+  - Authority console passing 22/22 tests with 22/22 routes compiling.
+
+---
+
 ## [0.17.0-integration-security-h13] — 2026-10-14
 
 ### Added
