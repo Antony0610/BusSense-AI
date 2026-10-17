@@ -47,8 +47,10 @@ services:
       - SIMULATION_INTERVAL_SECONDS=${SIMULATION_INTERVAL_SECONDS:-2}
       - DEFAULT_TRANSIT_CITY=${DEFAULT_TRANSIT_CITY:-Kochi, Kerala}
       - CV_MODE=${CV_MODE:-SIMULATION}
-    volumes:
-      - ./yolov8n.pt:/app/yolov8n.pt:ro
+    # Optional volume: Uncomment if custom yolov8n.pt weights are present on host.
+    # In standard staging/simulation mode, the backend operates safely without external model files.
+    # volumes:
+    #   - ./yolov8n.pt:/app/yolov8n.pt:ro
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health/live"]
       interval: 30s

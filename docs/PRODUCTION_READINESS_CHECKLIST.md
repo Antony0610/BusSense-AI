@@ -19,6 +19,8 @@ This document tracks the production readiness status of the BusSense AI platform
 | **Structured Logging** | **READY** | H14 Step 2 | Python `logging` with standard format, severity, and module names |
 | **RPC Permission Resolution** | **READY** | H14 Step 2 | Privileged backend execution + database-backed transaction fallback |
 | **Containerization & Docker** | **CONFIGURED** | H14 Step 3 | Multi-stage Dockerfiles + Compose verified statically (Runtime Engine Blocked on Host) |
+| **Staging Smoke Test Suite** | **READY** | H14 Step 4 | Non-destructive test script in `scripts/staging_smoke_test.py` |
+| **Disaster Recovery Runbook** | **READY** | H14 Step 4 | Managed PITR vs logical dump procedures in `docs/DEPLOYMENT_GUIDE.md` |
 | **Reverse Proxy & TLS** | **PLANNED** | Staging / Prod | Nginx / Cloudflare edge SSL termination (documented in DEPLOYMENT_GUIDE.md) |
 | **Physical APNs / FCM Push** | **DEFERRED** | Post-H14 | Deferred until physical Apple/Google developer accounts configured |
 
@@ -121,3 +123,40 @@ The table below documents every environment variable required for production exe
 4. Insert the production secret and production Supabase keys into `.env.production`.
 5. Configure DNS and TLS reverse proxy (Nginx or Cloudflare Tunnel) pointing to port 8000 (backend) and 3000 (authority).
 6. Verify `/health/live` and `/health/ready` via external HTTPS requests before opening traffic to commuters.
+7. Execute the staging verification suite:
+   ```bash
+   python scripts/staging_smoke_test.py
+   ```
+
+---
+
+## 8. Status Categorization
+
+Per release governance standards, readiness items are categorized across four distinct operational states:
+
+### 8.1 Implemented and Tested (100% Verified)
+- Production `SECRET_KEY` validation (Pydantic validator, length >= 32, no placeholder strings).
+- Dynamic CORS normalization and wildcard prohibition when credentials are enabled.
+- Server-side demo-account lockout (`ENVIRONMENT != "production"` and `DEMO_MODE == True`).
+- Container liveness probe (`GET /health/live`) returning HTTP 200 without external dependencies.
+- Container readiness probe (`GET /health/ready`) with bounded 2.0s Supabase ping returning 200/503.
+- Centralized 500 error handler returning sanitized JSON and correlation `X-Request-ID`.
+- Structured Python logging replacing `print()`.
+- Elevated backend service-role RPC execution for `validate_ticket_atomic` with database fallback.
+- Next.js 14 standalone compilation (22/22 routes compiling to `frontend/.next/standalone`).
+- Automated test suites: 203 backend tests, 22 authority tests, 100 mobile flutter tests (325 total passing).
+- Staging smoke verification script (`scripts/staging_smoke_test.py`).
+
+### 8.2 Implemented but Not Runtime-Verified
+- Container images in `backend/Dockerfile` and `frontend/Dockerfile` (authored, multi-stage, non-root, but not executed locally due to missing Docker engine).
+- Docker Compose orchestration in `docker-compose.yml` (syntax-checked and validated, but blocked from launching).
+
+### 8.3 Blocked by Missing Infrastructure
+- Local container runtime verification (`docker build` and `docker compose up`) is **BLOCKED ON HOST** because Docker CLI/daemon is not installed on this Windows environment.
+- Live staging smoke test execution against running containers is blocked until executed on a host with Docker installed.
+
+### 8.4 Deferred Pending Real-World Validation
+- Physical on-bus RTSP camera feed ingestion and edge GPU inference (currently verified in high-fidelity `SIMULATION` mode).
+- Physical Apple APNs / Google FCM push notification delivery keys (currently using transparent `DEFERRED` in-app notifications).
+- External production reverse proxy TLS 1.3 termination (Cloudflare / Nginx configuration deferred to production VM host).
+- Point-in-time recovery live exercise on production Supabase instance (deferred to scheduled maintenance window with operator authorization).

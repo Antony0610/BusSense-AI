@@ -30,6 +30,10 @@ All notable changes to the BusSense AI platform are documented in this file, adh
   - Root `docker-compose.yml` linking FastAPI backend and Authority console with health-check dependency gating and zero hardcoded secrets.
   - Added `docs/DEPLOYMENT_GUIDE.md` detailing operational runbooks, backup routines, rollback procedures, and PowerShell commands.
   - Audited local host environment and documented runtime Docker availability status.
+- **Deployment Operations, Disaster Recovery & Staging Verification (H14 Step 4):**
+  - Authored comprehensive disaster recovery matrix and operator runbook covering automated Supabase Point-in-Time Recovery (PITR), pre-release logical schema backups (`pg_dump`), image rollback, and schema revert procedures.
+  - Created automated non-destructive staging smoke-test suite (`scripts/staging_smoke_test.py`) validating liveness, readiness, CORS headers, correlation IDs, authentication barriers, and conductor role boundaries with sanitized output.
+  - Documented troubleshooting catalog for common networking, port conflict, CORS, and database readiness failure modes.
 - **Test Suite Verification:**
   - 17 new automated tests in `backend/tests/test_production_readiness_h14.py`.
   - Full backend test suite passing 203/203 tests (100%).

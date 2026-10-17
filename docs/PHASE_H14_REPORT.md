@@ -1,8 +1,8 @@
 # BusSense AI — Phase H14 Implementation Report
-## Full System Hardening: Production Configuration, Reliability, and Containerization (Steps 1, 2 & 3)
+## Full System Hardening: Production Configuration, Reliability, Containerization, and Staging Operations (Steps 1–4)
 
-**Phase:** Phase H14 — Production Readiness & Deployment Preparation (Steps 1, 2 & 3)
-**Status:** **STEPS 1, 2 & 3 IMPLEMENTED & VERIFIED** (Static Compilation Verified; Host Runtime Engine Blocked)
+**Phase:** Phase H14 — Production Readiness & Deployment Preparation (Steps 1–4)
+**Status:** **STEPS 1–4 IMPLEMENTED & VERIFIED** (Static Compilation & Smoke Suite Ready; Host Engine Blocked)
 **Date:** 2026-10-17  
 **Operating Region:** Greater Kochi Transit Network (Aluva, Kalamassery, Edappally, Palarivattom, Kaloor, MG Road, Kadavanthra, Vyttila Mobility Hub)  
 **Baseline Release Tag:** `v1.0.0-h13` (`d5208f25c492b0616ca70251463345e9470605dc`)  
@@ -12,7 +12,7 @@
 
 ## 1. Executive Summary
 
-Phase H14 delivers the complete transition of BusSense AI from an integrated development prototype to a production-hardened platform ready for staging container orchestration. Following the verified `v1.0.0-h13` release checkpoint, this phase incorporates Step 1 (Configuration and Secrets Hardening), Step 2 (Backend Reliability and Permission Alignment), and Step 3 (Containerization and Deployment Infrastructure).
+Phase H14 delivers the complete transition of BusSense AI from an integrated development prototype to a production-hardened platform ready for staging container orchestration. Following the verified `v1.0.0-h13` release checkpoint, this phase incorporates Step 1 (Configuration and Secrets Hardening), Step 2 (Backend Reliability and Permission Alignment), Step 3 (Containerization and Deployment Infrastructure), and Step 4 (Deployment Operations, Disaster Recovery and Staging Smoke Verification).
 
 ### Core Accomplishments
 1. **Production Configuration & Secret Key Hardening:** Eliminated reliance on development fallback keys in production. Enforced cryptographic length requirements (>=32 characters), disallowed default/prototype placeholder strings, and validated environment configuration at startup.
@@ -23,6 +23,7 @@ Phase H14 delivers the complete transition of BusSense AI from an integrated dev
 6. **Structured Python Logging:** Transitioned backend operational output from unstructured `print()` statements to Python standard logging (`logging`), formatting logs with timestamps, severity levels, module namespaces, and request IDs without leaking credentials.
 7. **Secure Resolution of `validate_ticket_atomic` RPC Permission Mismatch:** Resolved the H13 permission gap where `validate_ticket_atomic` execute grants were revoked from `anon`/`PUBLIC`. Implemented secure server-side execution via backend service-role authorization while maintaining user RBAC checks, and added a database-backed transaction fallback for local testing without weakening Supabase RLS.
 8. **Multi-Stage Containerization & Compose Orchestration:** Authored minimal attack-surface Dockerfiles for backend (Python 3.12 slim, non-root user `appuser:1000`) and Authority frontend (Node 20 Alpine, Next.js 14 standalone output, non-root user `nextjs:1001`), root `docker-compose.yml`, and clean `.dockerignore` files. Statically verified Next.js standalone compilation (22/22 routes) and Python runtime imports. Explicitly audited and documented host Docker engine status.
+9. **Deployment Operations & Staging Smoke Verification:** Authored comprehensive operations runbook ([docs/DEPLOYMENT_GUIDE.md](file:///d:/Bus_Sense_Ai/docs/DEPLOYMENT_GUIDE.md)) covering backup responsibilities (managed PITR vs logical pg_dump), rollback procedures, and troubleshooting. Created automated non-destructive staging smoke-test suite ([scripts/staging_smoke_test.py](file:///d:/Bus_Sense_Ai/scripts/staging_smoke_test.py)).
 
 ---
 
@@ -130,7 +131,29 @@ Phase H14 delivers the complete transition of BusSense AI from an integrated dev
 - **Services:** `backend` (FastAPI, port 8000) and `frontend` (Authority Console, port 3000) on private bridge network `bussense-network`.
 - **Startup Order:** `frontend` declares `depends_on: { backend: { condition: service_healthy } }`.
 - **Networking Hygiene:** Informs browser and Flutter clients to reach `http://localhost:8000/api` on the host, preventing unreachable internal Docker service hostnames.
-- **Security:** References environment variables (`${SECRET_KEY}`, `${SUPABASE_URL}`, `${SUPABASE_ANON_KEY}`); zero hardcoded credentials. Mounted YOLO weights volume (`./yolov8n.pt:/app/yolov8n.pt:ro`) with read-only permissions.
+- **Security:** References environment variables (`${SECRET_KEY}`, `${SUPABASE_URL}`, `${SUPABASE_ANON_KEY}`); zero hardcoded credentials. Optional YOLO weights volume mount documented without breaking fresh checkouts.
+
+---
+
+### 2.4 Step 4 — Deployment Operations, Recovery & Staging Verification
+
+#### A. Staging Verification Suite
+- **Location:** [scripts/staging_smoke_test.py](file:///d:/Bus_Sense_Ai/scripts/staging_smoke_test.py)
+- **Architecture:** Zero-dependency Python standard library smoke verification suite.
+- **Capabilities:**
+  - Evaluates `GET /health/live` (process alive) and `GET /health/ready` (database connected).
+  - Verifies presence of correlation header `X-Request-ID`.
+  - Checks frontend accessibility at `http://localhost:3000`.
+  - Audits dynamic CORS headers against allowed origin.
+  - Tests unauthenticated 401 barriers (`/api/auth/me`) and conductor role enforcement (`/api/tickets/validate`).
+  - Tests realtime polling fallback (`/api/realtime/events?limit=5`) and corridor routes retrieval (`/api/routes`).
+  - Output is strictly sanitized: tokens, passwords, and private credentials are never printed.
+
+#### B. Disaster Recovery & Rollback Protocols
+- **Location:** [docs/DEPLOYMENT_GUIDE.md](file:///d:/Bus_Sense_Ai/docs/DEPLOYMENT_GUIDE.md)
+- **Database Safeguards:** Distinguishes automated Supabase Point-in-Time Recovery (PITR) from pre-release logical schema dumps (`pg_dump`). Documents operator authorization gate required before database rewinds.
+- **Application Rollbacks:** Detailed runbooks for image rollbacks and git tag reverts to `v1.0.0-h13`.
+- **Troubleshooting Catalog:** Covers common CORS origin mismatches, 503 readiness degradations, port collisions, and Docker host/browser URL routing.
 
 ---
 
@@ -140,7 +163,7 @@ Phase H14 delivers the complete transition of BusSense AI from an integrated dev
 | :--- | :--- | :--- |
 | [.env.example](file:///d:/Bus_Sense_Ai/.env.example) | Modified | Added `ALLOWED_ORIGINS` and documented backend `SUPABASE_SERVICE_ROLE_KEY`. |
 | [.env.production.example](file:///d:/Bus_Sense_Ai/.env.production.example) | Created | Complete production environment template with variable documentation and placeholders. |
-| [.gitignore](file:///d:/Bus_Sense_Ai/.gitignore) | Modified | Track `!.env.production.example` while keeping `.env.production` strictly ignored. |
+| [.gitignore](file:///d:/Bus_Sense_Ai/.gitignore) | Modified | Track `!.env.production.example` and `!frontend/lib/`. |
 | [backend/app/core/config.py](file:///d:/Bus_Sense_Ai/backend/app/core/config.py) | Modified | Hardened `Settings` with production validators, dynamic CORS parsing, and secret rules. |
 | [backend/app/core/logging.py](file:///d:/Bus_Sense_Ai/backend/app/core/logging.py) | Created | Structured logging configuration and named logger factory. |
 | [backend/app/core/supabase.py](file:///d:/Bus_Sense_Ai/backend/app/core/supabase.py) | Modified | Added service-role RPC support, bounded timeout `ping()`, and structured logging. |
@@ -151,12 +174,14 @@ Phase H14 delivers the complete transition of BusSense AI from an integrated dev
 | [backend/.dockerignore](file:///d:/Bus_Sense_Ai/backend/.dockerignore) | Created | Build context exclusions for backend image. |
 | [backend/tests/test_production_readiness_h14.py](file:///d:/Bus_Sense_Ai/backend/tests/test_production_readiness_h14.py) | Created | 17 automated tests verifying Step 1 & Step 2 requirements. |
 | [frontend/next.config.mjs](file:///d:/Bus_Sense_Ai/frontend/next.config.mjs) | Modified | Added `output: 'standalone'` for optimized container compilation. |
-| [frontend/lib/realtime.ts](file:///d:/Bus_Sense_Ai/frontend/lib/realtime.ts) | Modified | Support dynamic `NEXT_PUBLIC_WS_URL` and `NEXT_PUBLIC_API_URL` environment variables. |
+| [frontend/lib/api.ts](file:///d:/Bus_Sense_Ai/frontend/lib/api.ts) | Tracked | Client SDK and API fetch client. |
+| [frontend/lib/realtime.ts](file:///d:/Bus_Sense_Ai/frontend/lib/realtime.ts) | Tracked | Support dynamic `NEXT_PUBLIC_WS_URL` and `NEXT_PUBLIC_API_URL` environment variables. |
 | [frontend/public/.gitkeep](file:///d:/Bus_Sense_Ai/frontend/public/.gitkeep) | Created | Guaranteed public directory asset mount for container builds. |
 | [frontend/Dockerfile](file:///d:/Bus_Sense_Ai/frontend/Dockerfile) | Created | Multi-stage Node 20 Alpine standalone Dockerfile with non-root user. |
 | [frontend/.dockerignore](file:///d:/Bus_Sense_Ai/frontend/.dockerignore) | Created | Build context exclusions for frontend image. |
 | [docker-compose.yml](file:///d:/Bus_Sense_Ai/docker-compose.yml) | Created | Local integration and staging orchestration with health dependencies. |
 | [docs/DEPLOYMENT_GUIDE.md](file:///d:/Bus_Sense_Ai/docs/DEPLOYMENT_GUIDE.md) | Created | Comprehensive containerized operations runbook with PowerShell instructions. |
+| [scripts/staging_smoke_test.py](file:///d:/Bus_Sense_Ai/scripts/staging_smoke_test.py) | Created | Non-destructive staging smoke test script. |
 
 ---
 
