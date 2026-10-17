@@ -18,8 +18,8 @@ This document tracks the production readiness status of the BusSense AI platform
 | **Exception Sanitization** | **READY** | H14 Step 2 | Centralized 500 handler returns sanitized JSON with `X-Request-ID` |
 | **Structured Logging** | **READY** | H14 Step 2 | Python `logging` with standard format, severity, and module names |
 | **RPC Permission Resolution** | **READY** | H14 Step 2 | Privileged backend execution + database-backed transaction fallback |
-| **Containerization & Docker** | **DEFERRED** | H14 Step 3 | Production Dockerfile and Compose configurations |
-| **Reverse Proxy & TLS** | **DEFERRED** | H14 Step 3 | Nginx / Cloudflare edge SSL termination |
+| **Containerization & Docker** | **CONFIGURED** | H14 Step 3 | Multi-stage Dockerfiles + Compose verified statically (Runtime Engine Blocked on Host) |
+| **Reverse Proxy & TLS** | **PLANNED** | Staging / Prod | Nginx / Cloudflare edge SSL termination (documented in DEPLOYMENT_GUIDE.md) |
 | **Physical APNs / FCM Push** | **DEFERRED** | Post-H14 | Deferred until physical Apple/Google developer accounts configured |
 
 ---

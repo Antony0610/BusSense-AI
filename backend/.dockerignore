@@ -1,0 +1,17 @@
+# Backend Docker Build Context Exclusions
+.venv
+.pytest_cache
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.coverage
+htmlcov
+tests
+.env
+.env.*
+!.env.example
+!.env.production.example
+.git
+.gitignore
+*.log

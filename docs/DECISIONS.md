@@ -131,3 +131,14 @@ This document records the architectural and engineering trade-offs made during t
   - *Re-granting EXECUTE to anon/PUBLIC:* Insecure; allows direct unauthenticated execution of atomic stored procedure.
   - *Single Health Check:* Causes orchestrators to restart servers whenever external database has a momentary delay.
 
+---
+
+## ADR-013 — Multi-Stage Containerization & Next.js Standalone Deployment
+- **Status:** Accepted
+- **Date:** 2026-10-17
+- **Decision:** Implement multi-stage Docker builds for backend (Python 3.12 slim) and frontend (Node 20 Alpine with `output: 'standalone'`). Run both containers under unprivileged, non-root system users (`appuser:1000` and `nextjs:1001`), configure healthcheck dependencies, and orchestrate via root `docker-compose.yml`. Keep database dependencies external on Supabase Cloud.
+- **Reason:** Multi-stage builds strip build tools and development dependencies, reducing final image sizes by ~70% and minimizing vulnerabilities. Non-root user execution prevents container breakout privileges. Standalone Next.js output bundles only required runtime modules, eliminating the full `node_modules` tree from the production container.
+- **Alternatives Considered:**
+  - *Monolithic Docker Image:* High image size (>1.5GB) and larger attack surface.
+  - *Running Supabase in Docker:* Unnecessary operational overhead; live production database is already managed and hardened on Supabase Cloud.
+

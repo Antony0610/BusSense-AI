@@ -1,8 +1,8 @@
 # BusSense AI — Phase H14 Implementation Report
-## Step 1 & Step 2: Production Configuration, Secrets Hardening, and Backend Reliability
+## Full System Hardening: Production Configuration, Reliability, and Containerization (Steps 1, 2 & 3)
 
-**Phase:** Phase H14 — Production Readiness & Deployment Preparation (Steps 1 & 2)  
-**Status:** **STEPS 1 & 2 COMPLETED & VERIFIED** (Container & Cloud Infrastructure Deferred to Step 3)  
+**Phase:** Phase H14 — Production Readiness & Deployment Preparation (Steps 1, 2 & 3)
+**Status:** **STEPS 1, 2 & 3 IMPLEMENTED & VERIFIED** (Static Compilation Verified; Host Runtime Engine Blocked)
 **Date:** 2026-10-17  
 **Operating Region:** Greater Kochi Transit Network (Aluva, Kalamassery, Edappally, Palarivattom, Kaloor, MG Road, Kadavanthra, Vyttila Mobility Hub)  
 **Baseline Release Tag:** `v1.0.0-h13` (`d5208f25c492b0616ca70251463345e9470605dc`)  
@@ -12,7 +12,7 @@
 
 ## 1. Executive Summary
 
-Phase H14 initiates the transition of BusSense AI from an integrated development prototype to an enterprise-grade, production-hardened platform. Following the successful closure of Phase H13 and verification of the protected `v1.0.0-h13` release checkpoint, this phase implements Step 1 (Configuration and Secrets Hardening) and Step 2 (Backend Reliability and Permission Alignment).
+Phase H14 delivers the complete transition of BusSense AI from an integrated development prototype to a production-hardened platform ready for staging container orchestration. Following the verified `v1.0.0-h13` release checkpoint, this phase incorporates Step 1 (Configuration and Secrets Hardening), Step 2 (Backend Reliability and Permission Alignment), and Step 3 (Containerization and Deployment Infrastructure).
 
 ### Core Accomplishments
 1. **Production Configuration & Secret Key Hardening:** Eliminated reliance on development fallback keys in production. Enforced cryptographic length requirements (>=32 characters), disallowed default/prototype placeholder strings, and validated environment configuration at startup.
@@ -22,6 +22,7 @@ Phase H14 initiates the transition of BusSense AI from an integrated development
 5. **Centralized Exception Handling & Request Correlation:** Added correlation ID middleware (`X-Request-ID`) and an unhandled 500 exception handler that logs detailed context internally while returning sanitized, traceback-free JSON to API clients.
 6. **Structured Python Logging:** Transitioned backend operational output from unstructured `print()` statements to Python standard logging (`logging`), formatting logs with timestamps, severity levels, module namespaces, and request IDs without leaking credentials.
 7. **Secure Resolution of `validate_ticket_atomic` RPC Permission Mismatch:** Resolved the H13 permission gap where `validate_ticket_atomic` execute grants were revoked from `anon`/`PUBLIC`. Implemented secure server-side execution via backend service-role authorization while maintaining user RBAC checks, and added a database-backed transaction fallback for local testing without weakening Supabase RLS.
+8. **Multi-Stage Containerization & Compose Orchestration:** Authored minimal attack-surface Dockerfiles for backend (Python 3.12 slim, non-root user `appuser:1000`) and Authority frontend (Node 20 Alpine, Next.js 14 standalone output, non-root user `nextjs:1001`), root `docker-compose.yml`, and clean `.dockerignore` files. Statically verified Next.js standalone compilation (22/22 routes) and Python runtime imports. Explicitly audited and documented host Docker engine status.
 
 ---
 
@@ -106,6 +107,33 @@ Phase H14 initiates the transition of BusSense AI from an integrated development
 
 ---
 
+### 2.3 Step 3 — Containerization & Deployment Infrastructure
+
+#### A. Backend Multi-Stage Dockerfile
+- **Location:** [backend/Dockerfile](file:///d:/Bus_Sense_Ai/backend/Dockerfile), [backend/.dockerignore](file:///d:/Bus_Sense_Ai/backend/.dockerignore)
+- **Base Image:** `python:3.12-slim` (pinned, minimal Debian bookworm-slim).
+- **Stage 1 (Builder):** Compiles wheel dependencies into `/root/.local`.
+- **Stage 2 (Runner):** Installs `curl` for health probes; creates dedicated non-root user `appuser:appgroup` (UID:GID 1000:1000); copies compiled packages into `/home/appuser/.local`; copies only required source directories (`app`, `cv`, `knowledge`, `migrations`); sets `PYTHONPATH=/app`; exposes port 8000.
+- **Entrypoint:** `uvicorn app.main:app --host 0.0.0.0 --port 8000` with native SIGTERM handling.
+- **Healthcheck:** Bounded `curl -f http://localhost:8000/health/live` (30s interval, 5s timeout, 3 retries).
+
+#### B. Authority Frontend Multi-Stage Dockerfile
+- **Location:** [frontend/Dockerfile](file:///d:/Bus_Sense_Ai/frontend/Dockerfile), [frontend/.dockerignore](file:///d:/Bus_Sense_Ai/frontend/.dockerignore)
+- **Base Image:** `node:20-alpine` (lightweight Alpine Linux).
+- **Stage 1 (Deps):** Installs `libc6-compat` and production dependencies via `npm ci`.
+- **Stage 2 (Builder):** Builds optimized Next.js standalone bundle (`output: 'standalone'` in `frontend/next.config.mjs`). Bakes public build arguments (`NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_WS_URL`).
+- **Stage 3 (Runner):** Creates dedicated non-root system user `nextjs:nodejs` (UID:GID 1001:1001); copies `.next/standalone`, `.next/static`, and `public`; sets `PORT=3000` and `HOSTNAME="0.0.0.0"`; starts standalone Node server via `node server.js`.
+- **Healthcheck:** Bounded `wget -q --spider http://127.0.0.1:3000/` (30s interval, 5s timeout, 3 retries).
+
+#### C. Docker Compose Orchestration
+- **Location:** [docker-compose.yml](file:///d:/Bus_Sense_Ai/docker-compose.yml)
+- **Services:** `backend` (FastAPI, port 8000) and `frontend` (Authority Console, port 3000) on private bridge network `bussense-network`.
+- **Startup Order:** `frontend` declares `depends_on: { backend: { condition: service_healthy } }`.
+- **Networking Hygiene:** Informs browser and Flutter clients to reach `http://localhost:8000/api` on the host, preventing unreachable internal Docker service hostnames.
+- **Security:** References environment variables (`${SECRET_KEY}`, `${SUPABASE_URL}`, `${SUPABASE_ANON_KEY}`); zero hardcoded credentials. Mounted YOLO weights volume (`./yolov8n.pt:/app/yolov8n.pt:ro`) with read-only permissions.
+
+---
+
 ## 3. Files Modified and Created
 
 | File | Status | Description |
@@ -119,7 +147,16 @@ Phase H14 initiates the transition of BusSense AI from an integrated development
 | [backend/app/main.py](file:///d:/Bus_Sense_Ai/backend/app/main.py) | Modified | Added correlation middleware, centralized 500 handler, `/health/live`, and `/health/ready`. |
 | [backend/app/api/auth.py](file:///d:/Bus_Sense_Ai/backend/app/api/auth.py) | Modified | Enforced server-side demo account isolation in production. |
 | [backend/app/services/ticket_service.py](file:///d:/Bus_Sense_Ai/backend/app/services/ticket_service.py) | Modified | Implemented privileged RPC invocation with database-backed transaction fallback. |
+| [backend/Dockerfile](file:///d:/Bus_Sense_Ai/backend/Dockerfile) | Created | Multi-stage Python 3.12 slim Dockerfile with non-root user and liveness probe. |
+| [backend/.dockerignore](file:///d:/Bus_Sense_Ai/backend/.dockerignore) | Created | Build context exclusions for backend image. |
 | [backend/tests/test_production_readiness_h14.py](file:///d:/Bus_Sense_Ai/backend/tests/test_production_readiness_h14.py) | Created | 17 automated tests verifying Step 1 & Step 2 requirements. |
+| [frontend/next.config.mjs](file:///d:/Bus_Sense_Ai/frontend/next.config.mjs) | Modified | Added `output: 'standalone'` for optimized container compilation. |
+| [frontend/lib/realtime.ts](file:///d:/Bus_Sense_Ai/frontend/lib/realtime.ts) | Modified | Support dynamic `NEXT_PUBLIC_WS_URL` and `NEXT_PUBLIC_API_URL` environment variables. |
+| [frontend/public/.gitkeep](file:///d:/Bus_Sense_Ai/frontend/public/.gitkeep) | Created | Guaranteed public directory asset mount for container builds. |
+| [frontend/Dockerfile](file:///d:/Bus_Sense_Ai/frontend/Dockerfile) | Created | Multi-stage Node 20 Alpine standalone Dockerfile with non-root user. |
+| [frontend/.dockerignore](file:///d:/Bus_Sense_Ai/frontend/.dockerignore) | Created | Build context exclusions for frontend image. |
+| [docker-compose.yml](file:///d:/Bus_Sense_Ai/docker-compose.yml) | Created | Local integration and staging orchestration with health dependencies. |
+| [docs/DEPLOYMENT_GUIDE.md](file:///d:/Bus_Sense_Ai/docs/DEPLOYMENT_GUIDE.md) | Created | Comprehensive containerized operations runbook with PowerShell instructions. |
 
 ---
 
@@ -193,10 +230,15 @@ flutter test
 
 ---
 
-## 6. Remaining Blockers & Deferred Work
+## 6. Remaining Blockers & Operational Status
 
-Per the task specification, containerization and deployment infrastructure were deliberately excluded from this turn:
-- **Docker & Compose Infrastructure:** `Dockerfile` (multi-stage Python 3.14/Next.js) and `docker-compose.production.yml` are deferred to Step 3.
-- **Reverse Proxy & TLS Termination:** Nginx / Caddy SSL reverse proxy configuration deferred to Step 3.
-- **Live Supabase Secret Configuration:** Operators must supply the actual production `SUPABASE_SERVICE_ROLE_KEY` and strong random `SECRET_KEY` on the production host.
-- **Production Readiness Status:** The codebase has achieved **Configuration and Reliability Readiness**. Full production readiness remains contingent upon completion of Step 3 (Deployment Infrastructure, Container Build, and Staging Smoke Verification).
+1. **Host Docker Engine Status:**
+   - Docker CLI / Daemon is **NOT installed** on this local Windows execution environment (`docker: The term 'docker' is not recognized`).
+   - Consequently, runtime execution of `docker build` and `docker compose up` is explicitly marked as **BLOCKED ON HOST**.
+   - Static configuration and compilation validation have been completed with 100% success: Next.js standalone build compiled 22/22 routes into `frontend/.next/standalone`, and all 325 cross-platform automated tests passed without failure.
+2. **Reverse Proxy & TLS Termination:**
+   - Managed TLS termination (via Cloudflare CDN, AWS ALB, or Nginx) must be configured in front of ports 8000 (backend) and 3000 (authority) on the target host.
+3. **Host Staging Secrets:**
+   - Operators deploying to a staging/production VM must populate `.env` using `.env.production.example` as a template, supplying real credentials for `SUPABASE_SERVICE_ROLE_KEY` and a cryptographically generated `SECRET_KEY`.
+4. **Production Readiness Determination:**
+   - The platform has achieved **Deployment Infrastructure Readiness**. Full staging deployment readiness requires executing `docker compose up -d` on an environment with Docker Engine installed.

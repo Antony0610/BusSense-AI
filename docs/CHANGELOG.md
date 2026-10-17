@@ -23,11 +23,18 @@ All notable changes to the BusSense AI platform are documented in this file, adh
   - Added backend-only service-role authorization support in `SupabaseService.rpc` for privileged execution of `validate_ticket_atomic`.
   - Implemented transactional database fallback in `TicketService` for local dev/testing environments without service-role keys.
   - Verified caller role enforcement (`DRIVER_CONDUCTOR` or `AUTHORITY`) and anti-reuse atomicity.
+- **Containerization & Deployment Infrastructure (H14 Step 3):**
+  - Multi-stage `backend/Dockerfile` using `python:3.12-slim` and non-root `appuser:1000`.
+  - Multi-stage `frontend/Dockerfile` using `node:20-alpine`, Next.js 14 standalone output, and non-root `nextjs:1001`.
+  - Created `.dockerignore` files for backend and frontend excluding development artifacts and secret files.
+  - Root `docker-compose.yml` linking FastAPI backend and Authority console with health-check dependency gating and zero hardcoded secrets.
+  - Added `docs/DEPLOYMENT_GUIDE.md` detailing operational runbooks, backup routines, rollback procedures, and PowerShell commands.
+  - Audited local host environment and documented runtime Docker availability status.
 - **Test Suite Verification:**
   - 17 new automated tests in `backend/tests/test_production_readiness_h14.py`.
   - Full backend test suite passing 203/203 tests (100%).
   - Full mobile test suite passing 100/100 tests (100%).
-  - Authority console passing 22/22 tests with 22/22 routes compiling.
+  - Authority console passing 22/22 tests with 22/22 routes compiling (standalone build verified).
 
 ---
 

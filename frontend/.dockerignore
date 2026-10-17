@@ -1,0 +1,10 @@
+# Frontend Docker Build Context Exclusions
+node_modules
+.next
+.git
+.gitignore
+tests
+*.log
+.env
+.env.*
+!.env.example
