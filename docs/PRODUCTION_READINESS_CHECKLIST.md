@@ -104,7 +104,11 @@ The table below documents every environment variable required for production exe
 [PASS] Exception sanitization (500 error hides tracebacks, returns correlation ID)
 [PASS] Structured logging (Timestamped, leveled, modular logging)
 [PASS] Ticket validation authorization (403 for unauthorized roles, atomic execution)
-[PASS] Backend test suite (203/203 passed)
+[PASS] Staging smoke verification (9/9 checks passed against live running services)
+[PASS] End-to-end system integration suite (33/33 tests passed in test_system_integration_h15.py)
+[PASS] Computer vision replay validation (YOLOv8n executed on sample_bus.mp4, 708ms avg latency)
+[PASS] Supabase Security Advisor (0 vulnerabilities active on live cloud database)
+[PASS] Backend test suite (236/236 passed)
 [PASS] Authority test suite (22/22 passed)
 [PASS] Authority production build (22/22 routes compiled)
 [PASS] Mobile test suite (100/100 passed)
@@ -144,8 +148,10 @@ Per release governance standards, readiness items are categorized across four di
 - Structured Python logging replacing `print()`.
 - Elevated backend service-role RPC execution for `validate_ticket_atomic` with database fallback.
 - Next.js 14 standalone compilation (22/22 routes compiling to `frontend/.next/standalone`).
-- Automated test suites: 203 backend tests, 22 authority tests, 100 mobile flutter tests (325 total passing).
-- Staging smoke verification script (`scripts/staging_smoke_test.py`).
+- Automated test suites: 236 backend tests, 22 authority tests, 100 mobile flutter tests (358 total passing).
+- Staging smoke verification script (`scripts/staging_smoke_test.py`) with 9/9 checks passing against live services.
+- Live Supabase cloud database verification (`lqegmqgkymstycpzplld`) with 0 security advisor lints.
+- CV replay pipeline executed on `datasets/videos/sample_bus.mp4` with `yolov8n.pt`.
 
 ### 8.2 Implemented but Not Runtime-Verified
 - Container images in `backend/Dockerfile` and `frontend/Dockerfile` (authored, multi-stage, non-root, but not executed locally due to missing Docker engine).
@@ -153,7 +159,7 @@ Per release governance standards, readiness items are categorized across four di
 
 ### 8.3 Blocked by Missing Infrastructure
 - Local container runtime verification (`docker build` and `docker compose up`) is **BLOCKED ON HOST** because Docker CLI/daemon is not installed on this Windows environment.
-- Live staging smoke test execution against running containers is blocked until executed on a host with Docker installed.
+- Containerized deployment verification is deferred until executed on a host with Docker installed.
 
 ### 8.4 Deferred Pending Real-World Validation
 - Physical on-bus RTSP camera feed ingestion and edge GPU inference (currently verified in high-fidelity `SIMULATION` mode).

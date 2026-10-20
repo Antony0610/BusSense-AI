@@ -400,4 +400,16 @@ Following the independent audit, the project is governed by strict dependency-or
   - **Documentation & GitHub Synchronization:**
     - Published reports: `docs/PHASE_H13_REPORT.md`, `docs/SUPABASE_SECURITY_AUDIT.md`, `docs/GITHUB_SYNC_REPORT.md`.
     - Scanned pre-publication working tree for secrets, confirmed zero credential leaks, and prepared clean baseline commits.
+- [x] **PHASE H14 — Production Configuration, Backend Reliability, Containerization & Operations: VERIFIED**
+  - **Configuration Hardening:** Pydantic validators enforcing minimum 32-character secret keys without prototype fallback, dynamic CORS origin parsing, server-side demo account isolation in production.
+  - **Backend Reliability:** Standardized `/health/live` (200 OK) and `/health/ready` (200/503 bounded 2.0s DB ping), centralized unhandled 500 handler returning sanitized JSON and `X-Request-ID`, structured Python logging.
+  - **Containerization & Deployment:** Multi-stage Dockerfiles for backend (Python 3.12 slim, non-root `appuser:1000`) and frontend (Node 20 Alpine, standalone Next.js 14, non-root `nextjs:1001`), root `docker-compose.yml`, non-destructive staging smoke test script (`scripts/staging_smoke_test.py`), disaster recovery runbook (`docs/DEPLOYMENT_GUIDE.md`).
+  - **Automated Verification:** 203 backend tests, 22 authority tests, 100 mobile tests passing (325 total).
+- [x] **PHASE H15 — Live Staging Deployment, End-to-End Integration & System Validation: VERIFIED**
+  - **Live Staging Smoke Verification:** Successfully executed `scripts/staging_smoke_test.py` with 9/9 checks passing against live FastAPI backend and Next.js frontend.
+  - **End-to-End System Integration (`test_system_integration_h15.py`):** 33 comprehensive integration tests passing across Passenger, Driver/Conductor, and Authority personas, prompt injection defense, and cross-user privacy boundaries.
+  - **Computer Vision Replay Validation:** Successfully executed offline video replay pipeline on `datasets/videos/sample_bus.mp4` with `yolov8n.pt` (6 frames, 708.9 ms avg CPU latency, 5.5% peak occupancy, LOW crowd classification, zero biometrics). Fixed candidate model path resolution bug in `backend/cv/detector.py`.
+  - **Live Supabase PostgreSQL Verification:** Confirmed database `ACTIVE_HEALTHY` in `ap-south-1` with 0 security advisor vulnerabilities (`{"result": {"lints": []}}`).
+  - **Automated Verification:** 236 backend tests, 22 authority tests, 100 mobile tests passing (358 total).
+
 

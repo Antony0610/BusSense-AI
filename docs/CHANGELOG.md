@@ -4,6 +4,35 @@ All notable changes to the BusSense AI platform are documented in this file, adh
 
 ---
 
+## [0.19.0-staging-validation-h15] — 2026-10-21
+
+### Added
+- **Live Staging Smoke Verification:**
+  - Automated staging verification (`scripts/staging_smoke_test.py`) executed against live running FastAPI backend (`http://localhost:8000`) and Next.js frontend (`http://localhost:3000`).
+  - 100% pass rate across all 9 checks: liveness, readiness, correlation IDs, frontend accessibility, dynamic CORS headers, unauthenticated barriers, conductor role boundaries, and realtime polling fallback.
+- **End-to-End System Integration Suite (`test_system_integration_h15.py`):**
+  - Added 33 automated integration tests covering complete cross-service user journeys for Passenger, Driver/Conductor, and Authority roles.
+  - Verified Passenger journey: corridor discovery, 4-horizon demand forecasting, multi-factor smart bus recommendations, digital ticket booking and payment, QR boarding pass generation, ticket ownership isolation, and RAG-grounded AI assistant chat.
+  - Verified Driver/Conductor journey: shift check-in, bus pairing, atomic QR code validation, duplicate ticket validation rejection (`ALREADY_USED`), invalid QR rejection, rapid hazard logging, and trip completion with layover staging.
+  - Verified Authority journey: command center HUD telemetry aggregation, fleet roster monitoring, incident triage and resolution, AI operational dispatch queue, and compliance report archiving.
+  - Verified Realtime & Freshness: data staleness calculation (15-second threshold), polling fallback buffer, and typed event envelopes.
+  - Verified Security & Safety: prompt injection defense, cross-user isolation, role-based boundary enforcement, and sanitized exception handling.
+- **Computer Vision Replay Validation:**
+  - Successfully executed offline video replay pipeline on `datasets/videos/sample_bus.mp4` with `yolov8n.pt`. Processed 6 frames at stride 10, measuring 708.9 ms average CPU inference latency, 5.5% peak occupancy, and `LOW` crowd classification.
+  - Fixed candidate model path resolution in `backend/cv/detector.py` to ensure explicit non-existent model weights properly trigger fallback mode.
+  - Stamped all CV events with privacy policy `PERSON_COUNTING_ONLY_NO_BIOMETRICS`.
+- **Database & Supabase Hardening Verification:**
+  - Verified live Supabase database (`lqegmqgkymstycpzplld`) status `ACTIVE_HEALTHY` in `ap-south-1`.
+  - Confirmed Supabase Security Advisor reports 0 security vulnerabilities remaining (`{"result": {"lints": []}}`).
+  - Verified ticket booking, validation audit logs, incident reporting, and cold-restart persistence.
+- **Test Suite Metrics:**
+  - Backend pytest tests expanded from 203 to 236 passing tests (+33 new tests in `test_system_integration_h15.py`).
+  - Authority frontend tests passing 22/22 tests with 22/22 routes compiling cleanly.
+  - Mobile Flutter tests passing 100/100 tests.
+  - Total combined automated tests: **358 passed across all platforms**.
+
+---
+
 ## [0.18.0-production-hardening-h14] — 2026-10-17
 
 ### Added

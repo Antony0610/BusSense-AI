@@ -54,8 +54,9 @@ class YOLOPersonDetector:
             Path.cwd() / self.model_path,
             Path(__file__).parent / self.model_path,
             Path(__file__).parent.parent.parent / self.model_path,
-            Path("d:/Bus_Sense_Ai/yolov8n.pt"),
         ]
+        if self.model_path == "yolov8n.pt":
+            candidates.append(Path("d:/Bus_Sense_Ai/yolov8n.pt"))
         for c in candidates:
             if c.exists() and c.is_file():
                 return str(c)
