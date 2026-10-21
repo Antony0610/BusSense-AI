@@ -15,6 +15,7 @@ class DataOrigin(str, Enum):
     HUMAN_DECISION = "HUMAN DECISION"
     CV_REPLAY = "CV REPLAY"
     ESTIMATE = "ESTIMATE"
+    SYNTHETIC = "SYNTHETIC DATA"
 
 class CrowdLevel(str, Enum):
     LOW = "LOW"

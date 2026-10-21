@@ -40,7 +40,8 @@ from app.api import (
     user,
     conductor,
     realtime,
-    notifications
+    notifications,
+    ingestion
 )
 from app.schemas.realtime import RealtimeEvent, RealtimeEventType
 from app.schemas.common import DataOrigin
@@ -218,6 +219,7 @@ app.include_router(user.router, prefix="/api")
 app.include_router(conductor.router, prefix="/api")
 app.include_router(realtime.router, prefix="/api")
 app.include_router(notifications.router, prefix="/api")
+app.include_router(ingestion.router, prefix="/api")
 
 
 @app.get("/")

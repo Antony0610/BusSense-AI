@@ -4,6 +4,41 @@ All notable changes to the BusSense AI platform are documented in this file, adh
 
 ---
 
+## [0.20.0-pilot-readiness-h16] — 2026-10-21
+
+### Added
+- **Transit Data Ingestion Boundary (`/api/ingest/*`):**
+  - Designed and implemented formal data-ingestion boundary for AVL/GPS telemetry, CCTV-derived aggregate occupancy, route stop schedules, and transit disruptions.
+  - Strict spatial bounding box enforcement for Greater Kochi operational corridor (`Lat [9.8000, 10.3500]`, `Lng [76.1500, 76.5500]`).
+  - Physical speed sanity bounds (`0.0` to `120.0` km/h) rejecting corrupted sensor packets.
+  - Temporal validation rejecting clock-skewed future records (>5m ahead) and stale live feeds (>15m in past unless marked `is_historical=True`).
+  - Per-vehicle monotonic sequencing and duplicate packet detection.
+  - Mandatory zero-biometrics privacy standard (`PERSON_COUNTING_ONLY_NO_BIOMETRICS`).
+  - Real-time ingestion telemetry health and vehicle staleness monitoring (`GET /api/ingest/health`).
+- **Computer Vision Offline Replay & Missing Weights Guard:**
+  - Added pre-check in `YOLOPersonDetector.load_model()` verifying local weights file existence prior to calling `YOLO()`, preventing blocking outbound network calls to remote asset servers.
+  - Verified `TemporalStabilizer` rolling median outlier rejection on transient camera occlusions.
+- **Demand Forecasting Evaluation vs Persistence Baseline:**
+  - Evaluated scikit-learn Ridge regression forecaster across +15m, +30m, and +60m horizons.
+  - Enforced chronological train/test split preventing future-data leakage; clamped outputs to $[0.0, 100.0]\%$.
+  - Demonstrated empirical MAE improvements over persistence baseline ($y_{t+h} = y_t$).
+- **Multi-Factor Recommendation Quality & Explainability:**
+  - Validated dynamic preference modes (`balanced`, `fastest`, `least_crowded`, `lowest_fare`).
+  - Verified dynamic candidate switching when a bus exceeds crowd thresholds.
+  - Safe fallback for unknown stops without crashing.
+- **Pilot Evaluation Plan (`docs/PILOT_EVALUATION_PLAN.md`):**
+  - Created comprehensive evaluation framework specifying 7 measurable metrics: CV Occupancy Count Error (MAE/RMSE), Demand Forecasting Error, Telemetry Availability & Freshness, API Latency & Error Rate, Recommendation Usefulness, Corridor Fleet Occupancy Balance, and Estimated CO2 Displacement.
+- **Automated Testing Suite Expansion:**
+  - Added 21 automated tests in `backend/tests/test_pilot_readiness_h16.py`.
+  - Backend pytest tests expanded from 236 to **257 passing tests**.
+  - Authority frontend tests passing **22/22 tests**.
+  - Authority Next.js production build compiling **22/22 routes** to standalone output.
+  - Mobile Flutter tests passing **100/100 tests**.
+  - Staging smoke verification passing **9/9 checks**.
+  - Total combined automated tests: **379 passed across all platforms**.
+
+---
+
 ## [0.19.0-staging-validation-h15] — 2026-10-21
 
 ### Added

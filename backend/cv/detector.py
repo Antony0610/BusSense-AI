@@ -67,9 +67,13 @@ class YOLOPersonDetector:
         if self.mock_mode:
             return
         if self._model is None:
+            resolved_path = self._resolve_model_path()
+            if not Path(resolved_path).exists() or not Path(resolved_path).is_file():
+                print(f"[YOLOPersonDetector] Notice: model file '{resolved_path}' does not exist, switching to fallback mock mode.")
+                self.mock_mode = True
+                return
             try:
                 from ultralytics import YOLO
-                resolved_path = self._resolve_model_path()
                 self._model = YOLO(resolved_path)
             except Exception as e:
                 # If weights file or torch loading fails, fallback gracefully to mock mode

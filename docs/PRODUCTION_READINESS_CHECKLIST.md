@@ -19,7 +19,9 @@ This document tracks the production readiness status of the BusSense AI platform
 | **Structured Logging** | **READY** | H14 Step 2 | Python `logging` with standard format, severity, and module names |
 | **RPC Permission Resolution** | **READY** | H14 Step 2 | Privileged backend execution + database-backed transaction fallback |
 | **Containerization & Docker** | **CONFIGURED** | H14 Step 3 | Multi-stage Dockerfiles + Compose verified statically (Runtime Engine Blocked on Host) |
-| **Staging Smoke Test Suite** | **READY** | H14 Step 4 | Non-destructive test script in `scripts/staging_smoke_test.py` |
+| **Transit Ingestion Boundary** | **READY** | H16 Step 1 | `/api/ingest/*` strictly validates Kochi bbox, monotonic seq, timestamp sanity, zero biometrics |
+| **Pilot Evaluation Plan** | **READY** | H16 Step 2 | `docs/PILOT_EVALUATION_PLAN.md` with 7 measurable metrics, formulas, baselines, and targets |
+| **Staging Smoke Test Suite** | **READY** | H14 Step 4 | Non-destructive test script in `scripts/staging_smoke_test.py` (9/9 passed) |
 | **Disaster Recovery Runbook** | **READY** | H14 Step 4 | Managed PITR vs logical dump procedures in `docs/DEPLOYMENT_GUIDE.md` |
 | **Reverse Proxy & TLS** | **PLANNED** | Staging / Prod | Nginx / Cloudflare edge SSL termination (documented in DEPLOYMENT_GUIDE.md) |
 | **Physical APNs / FCM Push** | **DEFERRED** | Post-H14 | Deferred until physical Apple/Google developer accounts configured |
@@ -147,8 +149,10 @@ Per release governance standards, readiness items are categorized across four di
 - Centralized 500 error handler returning sanitized JSON and correlation `X-Request-ID`.
 - Structured Python logging replacing `print()`.
 - Elevated backend service-role RPC execution for `validate_ticket_atomic` with database fallback.
+- Transit Data Ingestion Boundary (`/api/ingest/*`) with Greater Kochi spatial bounds, monotonic sequence tracking, clock skew rejection, and zero-biometrics validation.
+- Pilot Evaluation Plan (`docs/PILOT_EVALUATION_PLAN.md`) with 7 empirical success metrics.
 - Next.js 14 standalone compilation (22/22 routes compiling to `frontend/.next/standalone`).
-- Automated test suites: 236 backend tests, 22 authority tests, 100 mobile flutter tests (358 total passing).
+- Automated test suites: 257 backend tests, 22 authority tests, 100 mobile flutter tests (379 total passing).
 - Staging smoke verification script (`scripts/staging_smoke_test.py`) with 9/9 checks passing against live services.
 - Live Supabase cloud database verification (`lqegmqgkymstycpzplld`) with 0 security advisor lints.
 - CV replay pipeline executed on `datasets/videos/sample_bus.mp4` with `yolov8n.pt`.

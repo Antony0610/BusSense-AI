@@ -367,9 +367,13 @@ Invoke-RestMethod -Uri "http://localhost:8000/health/live"
 - [x] **Backend Multi-Stage Dockerfile:** Verified with non-root security and healthcheck probe.
 - [x] **Frontend Standalone Dockerfile:** Verified with Next.js 14 standalone compilation (22/22 routes).
 - [x] **Docker Compose Architecture:** Root `docker-compose.yml` validated.
+- [x] **Transit Ingestion Boundary:** Implemented in `/api/ingest/*` with Greater Kochi spatial bounding box, monotonic packet sequencing, clock skew rejection, and strict zero-biometrics validation.
+- [x] **Pilot Evaluation Plan:** Authored in `docs/PILOT_EVALUATION_PLAN.md` with 7 measurable empirical metrics.
 - [x] **Staging Smoke Test Suite:** Executed live against running services with 9/9 checks passing (`scripts/staging_smoke_test.py`).
 - [x] **End-to-End Integration Suite:** 33/33 tests passing in `backend/tests/test_system_integration_h15.py`.
-- [x] **Automated Regression Suite:** 236 backend tests, 22 authority tests, 100 mobile tests passing (358 total).
+- [x] **Phase H16 Pilot Readiness Suite:** 21/21 tests passing in `backend/tests/test_pilot_readiness_h16.py`.
+- [x] **Automated Regression Suite:** 257 backend tests, 22 authority tests, 100 mobile tests passing (**379 total passing**).
 - [x] **Live Supabase PostgreSQL:** Verified active in `ap-south-1` with 0 Security Advisor vulnerabilities.
 - [ ] **Docker Engine Availability:** **BLOCKED ON HOST** (Docker CLI is not installed on this local Windows environment).
 - [ ] **Public Production Deployment:** Intentionally deferred pending host container staging deployment.
+
