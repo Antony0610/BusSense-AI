@@ -1,7 +1,7 @@
 # BusSense AI — External Transit Provider Onboarding Guide
 ## Standardized Integration Contracts, Onboarding Procedure & Provenance Standards
 
-**Version:** 1.0.0-H19  
+**Version:** 1.1.0-H20  
 **Target Operating Region:** Greater Kochi Transit Network, Kerala, India  
 **Scope:** Regional Transit Data Providers (KSRTC, KMRL, On-Bus Edge Cameras, Kerala Police)  
 **Status:** **INTEGRATION-READY (STANDARDIZED PROTOCOLS & DEFENSIVE BOUNDARIES VERIFIED)**  
@@ -37,6 +37,8 @@ BusSense AI enforces strict boundary defense and honest data provenance across a
 | **Failure Handling** | HTTP 429 backoff; 3 automatic retries with exponential backoff ($2^n$ seconds); fallback to corridor schedule headway |
 | **Rate Limits** | 120 requests / minute per provider (HTTP 429 when exceeded) |
 | **Data Retention** | 90 days in partitioned Supabase / PostgreSQL storage; aggregate metrics retained permanently |
+| **Data Ownership** | Kerala State Road Transport Corporation (KSRTC) / Transport Dept, Government of Kerala |
+| **Operational Responsibilities** | KSRTC ITS Operations maintains on-bus GPS transponders and gateway uptime; BusSense AI validates coordinates, performs map-matching, and produces commuter ETAs |
 
 #### Sample GPS Telemetry Batch Request:
 ```json
@@ -75,6 +77,8 @@ BusSense AI enforces strict boundary defense and honest data provenance across a
 | **Failure Handling** | HTTP 429 sliding-window backoff; cached last-known coordinates marked `STALE DATA` after 30s; marked `UNAVAILABLE` after 120s |
 | **Rate Limits** | 120 requests / minute |
 | **Data Retention** | 60 days in operational storage |
+| **Data Ownership** | Kochi Metro Rail Limited (KMRL) / Government of Kerala |
+| **Operational Responsibilities** | KMRL Operations maintains electric feeder telematics push; BusSense AI map-matches feeder corridor Route 14A and publishes passenger connections |
 
 ---
 
@@ -94,6 +98,8 @@ BusSense AI enforces strict boundary defense and honest data provenance across a
 | **Failure Handling** | On camera edge failure or packet drop, system gracefully falls back to corridor historical demand forecasts (`PREDICTION` badge), preventing false zero-occupancy displays |
 | **Rate Limits** | 60 requests / minute per edge camera gateway |
 | **Data Retention** | 30 days of aggregate counts in PostgreSQL; zero video frames or facial images are ever retained |
+| **Data Ownership** | Transport Department, Government of Kerala (Joint Pilot Data Custodian) |
+| **Operational Responsibilities** | On-bus edge AI units compute local doorway head/body counts with zero-biometrics privacy filter; BusSense AI backend stabilizes counts and computes crowd tiers |
 
 #### Sample CCTV Headcount Ingestion Request:
 ```json
@@ -129,6 +135,8 @@ BusSense AI enforces strict boundary defense and honest data provenance across a
 | **Failure Handling** | Automatic poll retries; auto-cleared upon expiration time elapsed |
 | **Rate Limits** | 30 requests / minute |
 | **Data Retention** | 180 days for audit and safety analytics |
+| **Data Ownership** | Kerala Police / Kochi City Traffic Police |
+| **Operational Responsibilities** | Traffic Police Incident Management Desk logs verified corridor obstructions; BusSense AI broadcasts alerts to corridor controllers and commuter apps |
 
 ---
 

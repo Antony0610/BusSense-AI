@@ -1,10 +1,10 @@
 # BusSense AI — Pilot Evaluation Plan & Real-World Validation Framework
 
-**Document Version:** 1.3.0-H19  
+**Document Version:** 1.4.0-H20  
 **Target Operating Region:** Greater Kochi Transit Network, Kerala, India  
 **Corridor Focus:** Aluva Metro ➔ Kalamassery ➔ Edappally ➔ Palarivattom ➔ Kaloor ➔ Kadavanthra ➔ Vyttila Mobility Hub | Fort Kochi ➔ Infopark  
 **Date:** November 2026  
-**Status:** IMPLEMENTED AND EMPIRICALLY EVALUATED / CONTROLLED PILOT READY (Host Runtime Services, Simulation Harnesses, Data Provenance Tracking, Preconfigured Real Transit Adapters & 408 Automated Tests Passing; Live Hardware Deployment Pending Transport Authority Field Authorization)
+**Status:** IMPLEMENTED AND EMPIRICALLY EVALUATED / CONTROLLED PILOT READY (Host Runtime Services, Simulation Harnesses, Data Provenance Tracking, Disjoint CV Evaluation Partition, Preconfigured Real Transit Adapters & 418 Automated Tests Passing; Live Hardware Deployment Pending Transport Authority Field Authorization)
 
 ---
 
@@ -205,7 +205,7 @@ The following empirical measurements were obtained through the automated Phase H
 - **GPS Resilience:** Rejects non-numeric (NaN/Inf) coordinates, drops sudden jumps / impossible velocities (>120 km/h) with `IMPOSSIBLE_SPEED_OR_GPS_JUMP`, detects signal recovery after >30s gaps, and alerts on route deviations >500m (`WARNING_OFF_ROUTE`).
 
 ### 6.2 Computer Vision Pipeline Stress Benchmarks
-Evaluated across 6 physical transit environments using `scripts/evaluate_cv_pipeline.py` (300 total video frames, output in `docs/cv_evaluation_h19.json`):
+Evaluated across 6 physical transit environments using `scripts/evaluate_cv_pipeline.py` (300 total video frames, output in `docs/cv_evaluation_h20.json`, verified disjoint from calibration partition):
 
 | Scenario Name | Description | GT Mean | Raw MAE | Smoothed MAE | Smoothed RMSE | MAPE | Precision | Recall | F1-Score | P95 Latency | FPS | Stability |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |

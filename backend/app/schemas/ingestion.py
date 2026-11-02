@@ -196,6 +196,8 @@ class TransitAdapterSpec(BaseModel):
     failure_handling: str = "Graceful retry with exponential backoff; fallback to scheduled headway"
     rate_limit_per_minute: int = 60
     data_retention_days: int = 30
+    data_ownership: str = "Operating Transit Agency / Government of Kerala"
+    operational_responsibilities: str = "Provider maintains telemetry push uptime; BusSense AI validates and routes intelligence"
 
 class ProviderRevocationRequest(BaseModel):
     reason: str = Field(..., min_length=5, max_length=256, description="Audit reason for revoking provider integration")

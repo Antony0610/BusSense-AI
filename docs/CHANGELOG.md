@@ -4,6 +4,33 @@ All notable changes to the BusSense AI platform are documented in this file, adh
 
 ---
 
+## [0.24.0-independent-validation-h20] — 2026-11-02
+
+### Added
+- **Git Release Tag Integrity & Discrepancy Resolution:**
+  - Audited `v1.0.0-h13` release tag: verified that annotated tag object SHA `0f81366e809102b11fbec74bcd4dc7d39efc2199` and dereferenced release commit SHA `d5208f25c492b0616ca70251463345e9470605dc` represent the same authentic release tag.
+  - Confirmed zero tag mutations across local and remote repositories (`origin/master`).
+- **Comprehensive 9-Dimension Transit Provider Specifications:**
+  - Updated `TransitAdapterSpec` schema and adapter registry with `data_ownership` and `operational_responsibilities`.
+  - Audited all 4 regional transit adapters (`KSRTC_SWIFT_AVL_ADAPTER`, `KMRL_FEEDER_AVL_ADAPTER`, `CCTV_HEADCOUNT_GATEWAY_ADAPTER`, `KERALA_POLICE_DISRUPTION_ADAPTER`) across all 9 operational dimensions in `docs/PROVIDER_ONBOARDING_GUIDE.md`.
+- **Independent CV Validation & Disjoint Calibration Partition:**
+  - Implemented formal separation between calibration partition (`run_calibration_partition`, 300 frames) and independent evaluation partition (`run_independent_evaluation_partition`, 300 frames) in `backend/cv/evaluator.py`.
+  - Generated independent benchmark report `docs/cv_evaluation_h20.json` (1.41 smoothed MAE, 1.78 RMSE, 5.53% MAPE, 0.986 Precision, 0.928 Recall, 0.956 F1-Score, 45.3 FPS, 22.10 ms latency, 100% zero-biometrics passed).
+- **Pilot Authorization Lifecycle & Regulatory Governance Status:**
+  - Codified 5-stage pilot lifecycle (`PROPOSED PILOT`, `APPROVED PILOT`, `SCHEDULED PILOT`, `ACTIVE PILOT`, `COMPLETED PILOT`) in `docs/PILOT_EXECUTION_PROCEDURE.md`.
+  - Explicitly classified current project status as `PROPOSED PILOT` (with software stack `CONTROLLED PILOT READY`), preventing premature field claims.
+- **Automated Regression Expansion & System Verification:**
+  - Created `backend/tests/test_pilot_authorization_h20.py` with 10 unit and integration tests.
+  - Backend pytest suite: **296 passed** (up from 286 in H19, 276 in H18).
+  - Authority Jest suite: **22 passed** across 13 suites.
+  - Mobile Flutter suite: **100 passed**.
+  - Total automated regression suite: **418 passing tests (100% pass rate, 0 failures, 0 skipped)**.
+  - Next.js production build: 22/22 routes successfully compiled.
+  - Staging verification harness: 11/11 simulator steps passed, 8 passed smoke checks.
+  - Operational Verdict: `CONTROLLED PILOT READY`.
+
+---
+
 ## [0.23.0-pilot-execution-h19] — 2026-11-02
 
 ### Added

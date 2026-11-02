@@ -1001,7 +1001,9 @@ class IngestionService:
                 ],
                 failure_handling="HTTP 429 backoff; 3 automatic retries; fallback to scheduled corridor headway",
                 rate_limit_per_minute=120,
-                data_retention_days=90
+                data_retention_days=90,
+                data_ownership="Kerala State Road Transport Corporation (KSRTC) / Transport Dept, GoK",
+                operational_responsibilities="KSRTC ITS operations center maintains AVL gateway transponder ping; BusSense AI validates Kochi bounding box, map-matches to corridor waypoints, and updates fleet telemetry"
             ),
             TransitAdapterSpec(
                 adapter_id="KMRL_FEEDER_AVL_ADAPTER",
@@ -1039,7 +1041,9 @@ class IngestionService:
                 ],
                 failure_handling="HTTP 429 backoff; cached last-known coordinates marked STALE DATA after 30s",
                 rate_limit_per_minute=120,
-                data_retention_days=60
+                data_retention_days=60,
+                data_ownership="Kochi Metro Rail Limited (KMRL) / Government of Kerala",
+                operational_responsibilities="KMRL operations center maintains feeder telematics stream; BusSense AI map-matches Route 14A feeder corridor and publishes passenger arrival ETAs"
             ),
             TransitAdapterSpec(
                 adapter_id="CCTV_HEADCOUNT_GATEWAY_ADAPTER",
@@ -1076,7 +1080,9 @@ class IngestionService:
                 ],
                 failure_handling="On camera dropout, fallback to historical corridor demand predictions (labeled PREDICTION)",
                 rate_limit_per_minute=60,
-                data_retention_days=30
+                data_retention_days=30,
+                data_ownership="Transport Department, Government of Kerala (Joint Pilot Data Custodian)",
+                operational_responsibilities="BusSense edge camera unit executes real-time YOLOv8 head/body count with zero-biometrics filter; backend computes temporal smoothing and updates crowd load density"
             ),
             TransitAdapterSpec(
                 adapter_id="KERALA_POLICE_DISRUPTION_ADAPTER",
@@ -1109,7 +1115,9 @@ class IngestionService:
                 ],
                 failure_handling="Automatic re-poll every 60s; auto-clear upon expiration",
                 rate_limit_per_minute=30,
-                data_retention_days=180
+                data_retention_days=180,
+                data_ownership="Kerala Police / Kochi City Traffic Police",
+                operational_responsibilities="Traffic Police incident desk submits verified road blockage notices; BusSense AI broadcasts alerts to corridor controllers and affected commuters"
             )
         ]
 

@@ -49,18 +49,10 @@ def main():
     print("=" * 80)
 
     # Save output report to docs/
-    h19_path = Path(__file__).resolve().parent.parent / "docs" / "cv_evaluation_h19.json"
-    with open(h19_path, "w") as f:
+    h20_path = Path(__file__).resolve().parent.parent / "docs" / "cv_evaluation_h20.json"
+    with open(h20_path, "w") as f:
         json.dump(report.model_dump(), f, indent=2)
-    print(f"\nSaved Phase H19 CV evaluation report to: {h19_path}")
-
-    h18_path = Path(__file__).resolve().parent.parent / "docs" / "cv_evaluation_h18.json"
-    with open(h18_path, "w") as f:
-        json.dump(report.model_dump(), f, indent=2)
-
-    h17_path = Path(__file__).resolve().parent.parent / "docs" / "cv_evaluation_h17.json"
-    with open(h17_path, "w") as f:
-        json.dump(report.model_dump(), f, indent=2)
+    print(f"\nSaved Phase H20 CV evaluation report to: {h20_path}")
 
 if __name__ == "__main__":
     main()

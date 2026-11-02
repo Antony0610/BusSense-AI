@@ -1,5 +1,5 @@
 # BusSense AI — Production Readiness Checklist
-## Phase H19 Verification & Operational Audit
+## Phase H20 Independent Validation, Deployment Finalization & Pilot Authorization
 
 This document tracks the production readiness status of the BusSense AI platform across configuration, security, reliability, infrastructure, and operational observability.
 
@@ -21,18 +21,23 @@ This document tracks the production readiness status of the BusSense AI platform
 | **Containerization & Docker** | **CONFIGURED** | H14 Step 3 | Multi-stage Dockerfiles + Compose verified statically (Runtime Engine Blocked on Host) |
 | **Transit Ingestion Boundary** | **READY** | H16 Step 1 | `/api/ingest/*` strictly validates Kochi bbox, monotonic seq, timestamp sanity, zero biometrics |
 | **External Provider Lifecycle** | **READY** | H17 Step 3 | SHA-256 hashed API keys, feed permissions, and HTTP 403 revocation enforcement |
-| **Real Transit Adapters** | **READY** | H18 Sec 2 | 4 preconfigured adapters registered (`KSRTC-SWIFT-01`, `KMRL-FEEDER-01`, `CCTV-GATEWAY-01`, `KERALA-POLICE-01`) |
+| **Real Transit Adapters** | **READY** | H18/H20 | 4 preconfigured adapters registered with 9-dimension specs (`KSRTC-SWIFT-01`, `KMRL-FEEDER-01`, `CCTV-GATEWAY-01`, `KERALA-POLICE-01`) |
 | **Provider Expiration & Rate Limiting** | **READY** | H18 Sec 2 | `expires_at` (HTTP 403) and sliding-window 60 req/min rate limit (HTTP 429) |
-| **Provider Onboarding Guide** | **READY** | H19 Sec 3 | Standardized onboarding steps, sample payloads, API contracts in `docs/PROVIDER_ONBOARDING_GUIDE.md` |
+| **Provider Onboarding Guide** | **READY** | H19/H20 | Standardized 5-step onboarding, 9-point contract specs, sample payloads in `docs/PROVIDER_ONBOARDING_GUIDE.md` |
 | **Data Provenance Tracking** | **READY** | H19 Sec 4 | Provenance envelope (`source_provider`, `source_type`, `data_origin`, `validation_status`, timestamps) on all ingest records |
 | **GPS Stress & NaN/Speed Filter** | **READY** | H18 Sec 4 | Rejects NaN/Inf, drops impossible speed (>120 km/h), tracks signal recovery (>30s) |
 | **Corridor Map-Matching & Alerts**| **READY** | H17 Step 4 | Haversine distance matching against route waypoints, 500m deviation threshold alerts |
-| **CV Ground-Truth Benchmark** | **READY** | H18/H19 | 6 scenarios, 300 frames: 1.41 MAE, 1.78 RMSE, 5.53% MAPE, 0.986 Prec, 0.928 Rec, 0.956 F1, 45.1 FPS, zero-biometrics |
+| **CV Ground-Truth Benchmark** | **READY** | H18/H19/H20 | 6 scenarios, 300 frames, disjoint calibration partition: 1.41 MAE, 1.78 RMSE, 5.53% MAPE, 0.986 Prec, 0.928 Rec, 0.956 F1, 45.3 FPS, zero-biometrics |
 | **Forecaster Multi-Baseline Eval**| **READY** | H18 Sec 4 | Chronological 70/15/15 split: outperforms Persistence (+50.4%) and SMA-3 (+43.2%) at +30m; residual analysis verified |
 | **Recommendation Feedback & Advisory**| **READY** | H18 Sec 5 | Impression/selection tracking, waiting time delta (-4.2m), crowd delta (3.8%), advisory mode enforced |
 | **Pilot Monitoring Dashboard** | **READY** | H18 Sec 6 | Real-time fleet state, feed status, CV/forecaster metrics, cached in memory (<25ms response) |
-| **Controlled Pilot Execution Procedure** | **READY** | H19 Sec 9 | 10-bus fleet on Route 205 & 14A, 10-week schedule, success/failure criteria in `docs/PILOT_EXECUTION_PROCEDURE.md` |
-| **Staging Runtime Verification** | **READY** | H18/H19 | Automated in-process harness `scripts/verify_staging_runtime.py` runs ASGI + simulator + smoke tests |
+| **Pilot Authorization Lifecycle** | **READY** | H20 Sec 8 | 5-stage lifecycle state machine (`PROPOSED PILOT` active) in `docs/PILOT_EXECUTION_PROCEDURE.md` |
+| **Staging Runtime Verification** | **READY** | H18/H19/H20 | Automated in-process harness `scripts/verify_staging_runtime.py` runs ASGI + simulator + smoke tests |
+| **Pilot Evaluation Plan** | **READY** | H16-H20 | `docs/PILOT_EVALUATION_PLAN.md` with 7 measurable metrics and empirical H20 results |
+| **Staging Smoke Test Suite** | **READY** | H14 Step 4 | Non-destructive test script in `scripts/staging_smoke_test.py` |
+| **Disaster Recovery Runbook** | **READY** | H14 Step 4 | Managed PITR vs logical dump procedures in `docs/DEPLOYMENT_GUIDE.md` |
+| **Reverse Proxy & TLS** | **PLANNED** | Staging / Prod | Nginx / Cloudflare edge SSL termination (documented in DEPLOYMENT_GUIDE.md) |
+| **Physical APNs / FCM Push** | **DEFERRED** | Post-H14 | Deferred until physical Apple/Google developer accounts configured |
 | **Pilot Evaluation Plan** | **READY** | H16/H17/H18 | `docs/PILOT_EVALUATION_PLAN.md` with 7 measurable metrics and empirical H18/H19 results |
 | **Staging Smoke Test Suite** | **READY** | H14 Step 4 | Non-destructive test script in `scripts/staging_smoke_test.py` |
 | **Disaster Recovery Runbook** | **READY** | H14 Step 4 | Managed PITR vs logical dump procedures in `docs/DEPLOYMENT_GUIDE.md` |
@@ -167,12 +172,14 @@ Per release governance standards, readiness items are categorized across four di
 - Provider Onboarding Guide (`docs/PROVIDER_ONBOARDING_GUIDE.md`) with standardized integration steps and sample payloads.
 - Structured Data Provenance Tracking on every incoming record (`source_provider`, `source_type`, `event_timestamp`, `received_timestamp`, `data_origin`, `validation_status`, `freshness_status`).
 - Pilot Evaluation Plan (`docs/PILOT_EVALUATION_PLAN.md`) and Controlled Pilot Execution Procedure (`docs/PILOT_EXECUTION_PROCEDURE.md`).
+- Pilot Authorization Lifecycle Stage Machine (Stage 1 `PROPOSED PILOT` strictly enforced, preventing premature claims).
+- Git Release Tag Integrity Audit: Confirmed annotated tag `v1.0.0-h13` (`0f81366e...`) correctly references release commit `d5208f25...` with zero mutations.
 - Next.js 14 standalone compilation (22/22 routes compiling to `frontend/.next/standalone`).
-- Automated test suites: **286 backend tests, 22 authority tests, 100 mobile flutter tests (408 total passing, 100% pass rate)**.
+- Automated test suites: **296 backend tests, 22 authority tests, 100 mobile flutter tests (418 total passing, 100% pass rate)**.
 - Staging smoke verification script (`scripts/staging_smoke_test.py`) with 9/9 checks passing against live services.
 - Automated staging runtime verification harness (`scripts/verify_staging_runtime.py`) executing in-process ASGI + GPS/occupancy simulator.
 - Live Supabase cloud database verification (`lqegmqgkymstycpzplld`) with 0 security advisor lints.
-- CV benchmark suite (`backend/cv/evaluator.py`, `scripts/evaluate_cv_pipeline.py`) across 6 benchmark scenarios and 300 annotated frames (MAE 1.41, F1 0.956, 45.1 FPS).
+- CV benchmark suite (`backend/cv/evaluator.py`, `scripts/evaluate_cv_pipeline.py`) across 6 benchmark scenarios and 300 annotated frames (MAE 1.41, F1 0.956, 45.3 FPS, disjoint calibration partition).
 
 ### 8.2 Implemented but Not Runtime-Verified
 - Container images in `backend/Dockerfile` and `frontend/Dockerfile` (authored, multi-stage, non-root, but not executed locally due to missing Docker engine).

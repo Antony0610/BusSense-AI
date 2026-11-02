@@ -1,11 +1,12 @@
 # BusSense AI — Controlled Pilot Execution Procedure
 ## Operational Framework, Corridor Geography & Human-in-the-Loop Protocol
 
-**Document Version:** 1.0.0-H19  
+**Document Version:** 1.1.0-H20  
 **Target Operating Region:** Greater Kochi Transit Network, Kerala, India  
 **Primary Test Corridor:** Aluva Metro Station ➔ Kalamassery ➔ Edappally Toll ➔ Palarivattom ➔ Kaloor ➔ Kadavanthra ➔ Vyttila Mobility Hub (Route 205 Corridor)  
 **Secondary Feeder Corridor:** Fort Kochi Boat Jetty ➔ MG Road North ➔ Kaloor ➔ Palarivattom ➔ Kakkanad Civil Station ➔ Infopark Phase 1 Express Bay (Route 14A Corridor)  
-**Operational Status:** **CONTROLLED PILOT READY (PROCEDURE DOCUMENTED & PREPARED; FIELD EXECUTION PENDING TRANSPORT COMMISSIONERATE AUTHORIZATION)**  
+**Pilot Authorization Lifecycle State:** **PROPOSED PILOT (STAGE 1 OF 5)**  
+**Software Platform Status:** **CONTROLLED PILOT READY (100% PASS RATE ACROSS 408+ AUTOMATED REGRESSION TESTS)**  
 **Advisory Guardrail:** Strict Human-in-the-Loop Authority decision hierarchy; **Zero Automatic Dispatch Modifications**.
 
 ---
@@ -23,19 +24,51 @@ The controlled field pilot evaluates whether BusSense AI can reliably operate wi
 
 ---
 
-## 2. Participating Operators & Required Authorizations
+## 2. Pilot Authorization Lifecycle & Status Categorization
 
-| Operator / Entity | Role in Controlled Pilot | Required Authorization / Agreement |
-| :--- | :--- | :--- |
-| **KSRTC (Kerala State Road Transport Corporation)** | 6 instrumented city buses operating on Route 205 (Aluva–Vyttila) | KSRTC Managing Director / ITS Department MOU |
-| **KMRL (Kochi Metro Rail Limited)** | 4 feeder electric buses operating on Route 14A (Fort Kochi–Infopark) | KMRL Multimodal Transport Division Operating Clearance |
-| **Motor Vehicles Department (MVD) Kerala** | Regulatory oversight & safety audit | Transport Commissionerate Controlled Pilot Sanction |
-| **Kochi City Police / Traffic West & East** | Disruption & road obstruction feed validation | Traffic Police Incident Desk Information Sharing Clearance |
-| **Independent Observers (CUSAT / Transport Experts)** | Ground-truth doorway passenger counting | Academic/Observer Ground-Truth Agreement |
+To ensure complete regulatory honesty and prevent premature claims of field execution, BusSense AI strictly categorizes pilot progress across five sequential operational stages:
+
+| Stage | Classification | Formal Entry Criteria | Current BusSense AI Status |
+| :--- | :--- | :--- | :---: |
+| **Stage 1** | **PROPOSED PILOT** | Technical architecture, API contracts, corridors, safety protocols, and evaluation plan documented. | **CURRENT STATUS (ACTIVE & AUDITED)** |
+| **Stage 2** | **APPROVED PILOT** | Formal bilateral MOUs and Administrative Sanctions executed with KSRTC, KMRL, and Transport Commissionerate. | **PENDING ADMINISTRATIVE SANCTION** |
+| **Stage 3** | **SCHEDULED PILOT** | 10 specific vehicles assigned by depot managers; hardware mounting calendar finalized; crew rosters trained. | **PENDING DEPOT ALLOCATION** |
+| **Stage 4** | **ACTIVE PILOT** | Live cellular GPS telemetry and on-bus camera counts actively streaming from vehicles in Greater Kochi. | **NOT ACTIVE (TESTED VIA SIMULATOR)** |
+| **Stage 5** | **COMPLETED PILOT** | 10-week operational protocol completed; independent tallies reconciled; final audit published. | **PENDING CORRIDOR EXECUTION** |
+
+> [!IMPORTANT]
+> **Regulatory Honesty Guarantee:** BusSense AI does **NOT** claim active field execution or operational endorsement by KSRTC, KMRL, Kerala Police, or the Motor Vehicles Department (MVD) without signed administrative agreements. All external provider connectors operate in **INTEGRATION-READY** status awaiting agency credential provisioning.
 
 ---
 
-## 3. Test Corridor Geography & Waypoints
+## 3. Participating Operators & Required Authorizations
+
+| Operator / Entity | Role in Controlled Pilot | Required Authorization / Agreement | Status as of H20 |
+| :--- | :--- | :--- | :---: |
+| **KSRTC (Kerala State Road Transport Corporation)** | 6 instrumented city buses operating on Route 205 (Aluva–Vyttila) | KSRTC Managing Director / ITS Department MOU | **PROPOSED (Pending MOU)** |
+| **KMRL (Kochi Metro Rail Limited)** | 4 feeder electric buses operating on Route 14A (Fort Kochi–Infopark) | KMRL Multimodal Transport Division Operating Clearance | **PROPOSED (Pending Clearance)** |
+| **Motor Vehicles Department (MVD) Kerala** | Regulatory oversight & safety audit | Transport Commissionerate Controlled Pilot Sanction | **PROPOSED (Pending Sanction)** |
+| **Kochi City Police / Traffic West & East** | Disruption & road obstruction feed validation | Traffic Police Incident Desk Information Sharing Clearance | **PROPOSED (Pending Clearance)** |
+| **Independent Observers (CUSAT / Transport Experts)** | Ground-truth doorway passenger counting | Academic/Observer Ground-Truth Agreement | **PROPOSED (Pending Agreement)** |
+
+---
+
+## 4. Operational Governance & Authorization Verification Matrix
+
+| Governance Requirement | Verification Method | Enforcement Mechanism |
+| :--- | :--- | :--- |
+| **Operator Permission** | Formal signed bilateral agreement before any physical equipment installation. | Hardware mounting blocked until physical depot clearance permits issued. |
+| **CCTV & Privacy Permission** | Zero-biometrics compliance audit certified by technical committee. | Edge camera code strictly filters to Class 0 (`person`); rejects face/demographic fields. |
+| **GPS Data Authorization** | Secure provider onboarding via `/api/ingest/providers` with SHA-256 API keys. | Unauthorized payloads rejected with HTTP 401; revoked keys rejected with HTTP 403. |
+| **Data Protection Arrangements** | Row Level Security (RLS) in Supabase; user token encryption; ephemeral counting. | No commuter identity attached to occupancy counts or GPS map-matching records. |
+| **Pilot Operational Hierarchy** | Designated Authority Controller, Conductor Crew, and System Lead roles. | Role-Based Access Control (RBAC) enforced on all web and mobile endpoints. |
+| **Incident Response Protocol** | Documented camera failure, GPS dropout, and road diversion runbooks. | Automatic fallback to historical predictions; signal recovery logging (>30s). |
+| **Human Oversight Protocol** | Advisory mode enforced at system level (`advisory_mode_enforced = True`). | Recommendation engine outputs suggestions only; zero automated dispatch mutations. |
+| **Success / Rollback Criteria** | Quantitative thresholds for MAE ($\le 3.0$), availability ($\ge 95\%$), and safety. | Immediate pilot suspension triggered if critical failure criteria are breached. |
+
+---
+
+## 5. Test Corridor Geography & Waypoints
 
 ### Primary Corridor: Route 205 (Aluva Metro ➔ Vyttila Mobility Hub)
 - **Total Corridor Distance:** 18.2 km  
@@ -51,7 +84,7 @@ The controlled field pilot evaluates whether BusSense AI can reliably operate wi
 
 ---
 
-## 4. Test Duration, Phasing & Timeline
+## 6. Test Duration, Phasing & Timeline
 
 The controlled pilot is structured into a rigorous **10-Week Phased Schedule**:
 
@@ -65,7 +98,7 @@ The controlled pilot is structured into a rigorous **10-Week Phased Schedule**:
 
 ---
 
-## 5. Responsible Personnel & Duty Hierarchy
+## 7. Responsible Personnel & Duty Hierarchy
 
 ```
 ┌────────────────────────────────────────────────────────┐
@@ -112,7 +145,7 @@ The controlled pilot is structured into a rigorous **10-Week Phased Schedule**:
 
 ---
 
-## 7. Incident Handling & Emergency Fallback Procedures
+## 9. Incident Handling & Emergency Fallback Procedures
 
 1. **Edge Camera Unit Failure:**
    - Ingestion service detects camera packet dropout ($> 60\text{ seconds}$).
@@ -129,7 +162,7 @@ The controlled pilot is structured into a rigorous **10-Week Phased Schedule**:
 
 ---
 
-## 8. Strict Human-in-the-Loop Operational Guardrail
+## 10. Strict Human-in-the-Loop Operational Guardrail
 
 - **Advisory Mode Is Mandatory (`advisory_mode_enforced = True`):**
   - AI transit intelligence generates recommendations, demand predictions, and fleet balancing suggestions.
