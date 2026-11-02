@@ -149,6 +149,8 @@ class ExternalProviderRegisterRequest(BaseModel):
     provider_name: str = Field(..., min_length=3, max_length=128, description="Descriptive organization or system name")
     allowed_feed_types: List[str] = Field(default_factory=lambda: ["AVL_GPS"], description="Allowed feeds: AVL_GPS, CCTV_OCCUPANCY, ROUTE_SCHEDULE, DISRUPTION")
     contact_email: str = Field(..., description="Technical point of contact email")
+    expires_at: Optional[str] = Field(default=None, description="Optional ISO 8601 credential expiration timestamp")
+    rate_limit_per_minute: int = Field(default=60, ge=1, le=1000, description="Max allowed requests per minute")
 
 class ExternalProviderResponse(BaseModel):
     provider_id: str
@@ -158,9 +160,23 @@ class ExternalProviderResponse(BaseModel):
     allowed_feed_types: List[str]
     is_active: bool
     created_at: str
+    expires_at: Optional[str] = None
+    rate_limit_per_minute: int = 60
     revoked_at: Optional[str] = None
     revocation_reason: Optional[str] = None
     ingested_records_count: int = 0
+    adapter_type: Optional[str] = None
+
+class TransitAdapterSpec(BaseModel):
+    adapter_id: str
+    adapter_name: str
+    provider_type: str # e.g. "KSRTC", "KMRL", "BUSSENSE_EDGE", "KERALA_POLICE"
+    feed_type: str # "AVL_GPS", "CCTV_OCCUPANCY", "ROUTE_SCHEDULE", "DISRUPTION"
+    protocol: str # "HTTP_POST_JSON", "REST_PULL", "WEBSOCKET"
+    status: str # "CONFIGURED_READY_FOR_FIELD", "SIMULATED_BENCHMARK"
+    truth_label: str
+    endpoint: str
+    sample_payload: dict
 
 class ProviderRevocationRequest(BaseModel):
     reason: str = Field(..., min_length=5, max_length=256, description="Audit reason for revoking provider integration")
@@ -193,5 +209,11 @@ class PilotMonitoringDashboardResponse(BaseModel):
     data_origins: dict
     privacy_standard: str
     greater_kochi_bbox: dict
+    forecaster_evaluation: Optional[dict] = None
+    cv_metrics_summary: Optional[dict] = None
+    failed_ingestion_events_count: int = 0
+    off_route_alerts_count: int = 0
+    signal_recoveries_count: int = 0
+    recommendation_analytics_summary: Optional[dict] = None
     timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 

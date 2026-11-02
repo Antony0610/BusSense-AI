@@ -23,7 +23,8 @@ from app.schemas.ingestion import (
     ExternalProviderResponse,
     ProviderRevocationRequest,
     MapMatchingResult,
-    PilotMonitoringDashboardResponse
+    PilotMonitoringDashboardResponse,
+    TransitAdapterSpec
 )
 from app.services.ingestion_service import ingestion_service
 from app.core.security import get_current_user, TokenPayload
@@ -58,6 +59,12 @@ async def verify_ingest_auth(
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail=f"Access denied: {err_msg}"
+                )
+            if err_msg and "RATE_LIMIT_EXCEEDED" in err_msg:
+                raise HTTPException(
+                    status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                    detail=err_msg,
+                    headers={"Retry-After": "60", "X-RateLimit-Limit": "60"}
                 )
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -175,6 +182,21 @@ async def reactivate_external_provider(
         data=active,
         data_origin=DataOrigin.LIVE,
         message=f"Provider '{provider_id}' reactivated"
+    )
+
+@router.get("/adapters", response_model=ApiResponse[List[TransitAdapterSpec]])
+async def list_transit_adapters(
+    auth_context: dict = Depends(verify_ingest_auth)
+):
+    """
+    Returns preconfigured Greater Kochi transit adapter integration specifications.
+    Clearly marks simulation vs live feeds with honest truth labels.
+    """
+    adapters = ingestion_service.list_transit_adapters()
+    return ApiResponse(
+        data=adapters,
+        data_origin=DataOrigin.LIVE,
+        message=f"Retrieved {len(adapters)} configured transit adapter specifications"
     )
 
 @router.get("/map-match/{bus_number}", response_model=ApiResponse[MapMatchingResult])

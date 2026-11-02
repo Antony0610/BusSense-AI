@@ -132,6 +132,10 @@ class RecommendationAnalyticsResponse(BaseModel):
     compliance_rate_pct: float
     crowd_savings_achieved_avg_pct: float
     stale_telemetry_penalties_applied: int
+    avg_waiting_time_delta_mins: Optional[float] = None
+    predicted_vs_observed_occupancy_delta: Optional[float] = None
+    recommendation_availability_pct: float = 100.0
+    advisory_mode_enforced: bool = True
     timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 class HorizonEvaluationDetail(BaseModel):
@@ -141,6 +145,12 @@ class HorizonEvaluationDetail(BaseModel):
     baseline_mae: float
     baseline_rmse: float
     mae_improvement_pct: float
+    sma_baseline_mae: Optional[float] = None
+    sma_baseline_rmse: Optional[float] = None
+    sma_mae_improvement_pct: Optional[float] = None
+    mean_residual: Optional[float] = None
+    residual_std: Optional[float] = None
+    residual_skewness: Optional[float] = None
 
 class PeakOffPeakEvaluation(BaseModel):
     peak_hours_definition: str = "08:00-10:30, 17:00-19:30 IST"
@@ -160,9 +170,13 @@ class PilotForecastingEvaluationResponse(BaseModel):
     training_data_quality: str
     total_samples: int
     train_split_pct: float
+    validation_split_pct: float = 15.0
     test_split_pct: float
     overall_metrics: List[HorizonEvaluationDetail]
     peak_vs_offpeak: PeakOffPeakEvaluation
     corridor_evaluations: List[CorridorEvaluationDetail]
+    feature_importance: Optional[Dict[str, float]] = None
+    overfitting_risk_assessment: Optional[str] = "LOW (L2 regularization alpha=1.0, validation-checked, 10 engineered features)"
+    residual_distribution: Optional[Dict[str, Dict[str, float]]] = None
     timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 

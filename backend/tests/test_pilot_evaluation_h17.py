@@ -24,6 +24,7 @@ from app.schemas.ingestion import (
 )
 from app.schemas.common import DataOrigin
 from cv.evaluator import cv_evaluator, CVEvaluationReport
+from app.services.gps_simulator import gps_simulator
 from app.services.demand_forecaster import demand_forecaster
 from app.services.recommendation_engine import recommendation_engine
 from app.schemas.prediction import (
@@ -116,17 +117,17 @@ def test_gps_ingestion_monotonic_and_off_route():
     assert res_valid.accepted == 1
     assert res_valid.rejected == 0
 
-    # Off-route record
+    # Off-route record (870m off-corridor, physically valid speed 60s @ 52 km/h)
     batch_off = GpsTelemetryBatchRequest(
         feed_id="TEST-FEED-01",
         records=[
             GpsTelemetryRecord(
                 bus_number="205",
-                latitude=9.8500,
-                longitude=76.4000,
+                latitude=10.0270,
+                longitude=76.3160,
                 speed_kmh=40.0,
                 heading_deg=90.0,
-                timestamp=(now + timedelta(seconds=10)).isoformat(),
+                timestamp=(now + timedelta(seconds=60)).isoformat(),
                 sequence_number=1002,
                 data_origin=DataOrigin.LIVE
             )
@@ -156,8 +157,9 @@ def test_gps_ingestion_monotonic_and_off_route():
     assert "OUT_OF_ORDER" in res_ooo.results[0].reason
 
 # 4. CCTV Ingestion & Zero-Biometrics Enforced
-def test_cctv_occupancy_ingestion():
-    import asyncio
+
+@pytest.mark.anyio
+async def test_cctv_occupancy_ingestion():
     svc = IngestionService()
     now_iso = datetime.now(timezone.utc).isoformat()
 
@@ -172,7 +174,7 @@ def test_cctv_occupancy_ingestion():
         privacy_standard="PERSON_COUNTING_ONLY_NO_BIOMETRICS",
         data_origin=DataOrigin.CV_REPLAY
     )
-    res = asyncio.run(svc.ingest_cctv_occupancy(cctv_rec))
+    res = await svc.ingest_cctv_occupancy(cctv_rec)
     assert res.accepted == 1
     assert res.results[0].status == "ACCEPTED"
 
@@ -186,6 +188,9 @@ def test_cctv_occupancy_ingestion():
             capacity=55,
             privacy_standard="FACIAL_RECOGNITION_NOT_ALLOWED"
         )
+
+    # Reset simulator fleet state so other tests start clean
+    gps_simulator.fleet_state["205"]["data_origin"] = DataOrigin.SIMULATED
 
 # 5. CV Pipeline Empirical Evaluator
 def test_cv_pipeline_empirical_evaluator():
@@ -253,42 +258,37 @@ def test_recommendation_tracking_and_stale_penalty():
 
     # Verify stale telemetry penalty in candidate evaluation
     # Set stale telemetry (>60s) for a vehicle
-    from app.services.gps_simulator import gps_simulator
-    orig_origin = gps_simulator.fleet_state.get("205", {}).get("data_origin")
-    gps_simulator.fleet_state["205"]["data_origin"] = DataOrigin.LIVE
-    try:
-        stale_ts = datetime.now(timezone.utc) - timedelta(seconds=180)
-        ingestion_service._bus_telemetry_state["205"] = {
-            "last_timestamp": stale_ts,
-            "last_seq": 99,
-            "feed_id": "TEST",
-            "latitude": 9.9922,
-            "longitude": 76.2974,
-            "speed_kmh": 20.0,
-            "heading_deg": 180.0,
-            "data_origin": DataOrigin.LIVE
-        }
-        candidate = {
-            "bus_number": "205",
-            "metadata": {
-                "route_number": "205",
-                "route_name": "Aluva-Vyttila",
-                "operator_type": "KSRTC",
-                "has_priority_lane": True
-            },
-            "duration_mins": 35,
-            "distance_km": 15.0,
-            "fare_inr": 25.0,
-            "has_priority_lane": True,
-            "is_direct": True
-        }
-        item, score_down, qual = engine.evaluate_bus_candidate(candidate, preference="balanced")
-        assert qual == "LOW"
-        assert engine.stale_penalties_applied > init_penalties
-    finally:
-        if orig_origin:
-            gps_simulator.fleet_state["205"]["data_origin"] = orig_origin
-        ingestion_service._bus_telemetry_state.pop("205", None)
+    stale_ts = datetime.now(timezone.utc) - timedelta(seconds=180)
+    ingestion_service._bus_telemetry_state["205"] = {
+        "last_timestamp": stale_ts,
+        "last_seq": 99,
+        "feed_id": "TEST",
+        "latitude": 9.9922,
+        "longitude": 76.2974,
+        "speed_kmh": 20.0,
+        "heading_deg": 180.0,
+        "data_origin": DataOrigin.LIVE
+    }
+    candidate = {
+        "bus_number": "205",
+        "metadata": {
+            "route_number": "205",
+            "route_name": "Aluva-Vyttila",
+            "operator_type": "KSRTC",
+            "has_priority_lane": True
+        },
+        "duration_mins": 35,
+        "distance_km": 15.0,
+        "fare_inr": 25.0,
+        "has_priority_lane": True,
+        "is_direct": True
+    }
+    item, score_down, qual = engine.evaluate_bus_candidate(candidate, preference="balanced")
+    assert qual == "LOW"
+    assert engine.stale_penalties_applied > init_penalties
+
+    # Clean up test telemetry state so other test suites are isolated
+    ingestion_service._bus_telemetry_state.pop("205", None)
 
 # 8. Pilot Monitoring Dashboard Response
 def test_pilot_monitoring_summary():
@@ -313,4 +313,3 @@ def test_data_origin_enum_truth_labels():
     assert "ESTIMATE" in origins
     assert "STALE DATA" in origins
     assert "UNAVAILABLE" in origins
-

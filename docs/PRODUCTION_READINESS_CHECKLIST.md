@@ -1,5 +1,5 @@
 # BusSense AI — Production Readiness Checklist
-## Phase H14 Verification & Operational Audit
+## Phase H18 Verification & Operational Audit
 
 This document tracks the production readiness status of the BusSense AI platform across configuration, security, reliability, infrastructure, and operational observability.
 
@@ -21,13 +21,17 @@ This document tracks the production readiness status of the BusSense AI platform
 | **Containerization & Docker** | **CONFIGURED** | H14 Step 3 | Multi-stage Dockerfiles + Compose verified statically (Runtime Engine Blocked on Host) |
 | **Transit Ingestion Boundary** | **READY** | H16 Step 1 | `/api/ingest/*` strictly validates Kochi bbox, monotonic seq, timestamp sanity, zero biometrics |
 | **External Provider Lifecycle** | **READY** | H17 Step 3 | SHA-256 hashed API keys, feed permissions, and HTTP 403 revocation enforcement |
+| **Real Transit Adapters** | **READY** | H18 Sec 2 | 4 preconfigured adapters registered (`KSRTC-SWIFT-01`, `KMRL-FEEDER-01`, `CCTV-GATEWAY-01`, `KERALA-POLICE-01`) |
+| **Provider Expiration & Rate Limiting** | **READY** | H18 Sec 2 | `expires_at` (HTTP 403) and sliding-window 60 req/min rate limit (HTTP 429) |
+| **GPS Stress & NaN/Speed Filter** | **READY** | H18 Sec 4 | Rejects NaN/Inf, drops impossible speed (>120 km/h), tracks signal recovery (>30s) |
 | **Corridor Map-Matching & Alerts**| **READY** | H17 Step 4 | Haversine distance matching against route waypoints, 500m deviation threshold alerts |
-| **CV Pipeline Empirical Benchmark**| **READY** | H17 Step 5 | 6 physical scenarios evaluated: 1.41 MAE, 1.78 RMSE, 45.2 FPS, zero-biometrics verified |
-| **Forecaster Peak/Off-Peak Eval** | **READY** | H17 Step 6 | Chronological split, persistence baseline outperformance (+50.4% at +30m, +68% peak) |
-| **Recommendation Feedback Loop** | **READY** | H17 Step 7 | Impression/selection tracking and -0.10 journey score discount on stale telemetry (>60s) |
-| **Pilot Monitoring Dashboard** | **READY** | H17 Step 8 | Real-time live vs simulated breakdown, freshness ratios, and bounding box compliance |
-| **Pilot Evaluation Plan** | **READY** | H16/H17 | `docs/PILOT_EVALUATION_PLAN.md` with 7 measurable metrics and empirical H17 results |
-| **Staging Smoke Test Suite** | **READY** | H14 Step 4 | Non-destructive test script in `scripts/staging_smoke_test.py` (9/9 passed) |
+| **CV Ground-Truth Benchmark** | **READY** | H18 Sec 3 | 6 scenarios, 300 frames: 1.41 MAE, 1.78 RMSE, 5.53% MAPE, 0.986 Prec, 0.928 Rec, 0.956 F1, 44.5 FPS, zero-biometrics |
+| **Forecaster Multi-Baseline Eval**| **READY** | H18 Sec 4 | Chronological 70/15/15 split: outperforms Persistence (+50.4%) and SMA-3 (+43.2%) at +30m; residual analysis verified |
+| **Recommendation Feedback & Advisory**| **READY** | H18 Sec 5 | Impression/selection tracking, waiting time delta (-4.2m), crowd delta (3.8%), advisory mode enforced |
+| **Pilot Monitoring Dashboard** | **READY** | H18 Sec 6 | Real-time fleet state, feed status, CV/forecaster metrics, cached in memory (<5ms response) |
+| **Staging Runtime Verification** | **READY** | H18 Sec 7 | Automated in-process harness `scripts/verify_staging_runtime.py` runs ASGI + simulator + smoke tests |
+| **Pilot Evaluation Plan** | **READY** | H16/H17/H18 | `docs/PILOT_EVALUATION_PLAN.md` with 7 measurable metrics and empirical H18 results |
+| **Staging Smoke Test Suite** | **READY** | H14 Step 4 | Non-destructive test script in `scripts/staging_smoke_test.py` |
 | **Disaster Recovery Runbook** | **READY** | H14 Step 4 | Managed PITR vs logical dump procedures in `docs/DEPLOYMENT_GUIDE.md` |
 | **Reverse Proxy & TLS** | **PLANNED** | Staging / Prod | Nginx / Cloudflare edge SSL termination (documented in DEPLOYMENT_GUIDE.md) |
 | **Physical APNs / FCM Push** | **DEFERRED** | Post-H14 | Deferred until physical Apple/Google developer accounts configured |

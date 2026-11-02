@@ -11,6 +11,7 @@ import re
 import math
 import hashlib
 import secrets
+import time
 from datetime import datetime, timezone, timedelta
 from typing import Dict, List, Any, Optional, Tuple
 from app.schemas.common import DataOrigin, CrowdLevel
@@ -27,6 +28,7 @@ from app.schemas.ingestion import (
     ProviderRevocationRequest,
     MapMatchingResult,
     PilotMonitoringDashboardResponse,
+    TransitAdapterSpec,
     KOCHI_MIN_LAT,
     KOCHI_MAX_LAT,
     KOCHI_MIN_LNG,
@@ -58,10 +60,15 @@ class IngestionService:
             "total_cctv_rejected": 0,
             "total_schedules_ingested": 0,
             "total_disruptions_ingested": 0,
+            "signal_recoveries": 0,
+            "off_route_events": 0,
             "last_ingested_at": None
         }
 
-        # Registered External Transit Providers (Phase H17)
+        # Rate limiting request timestamp registry per provider
+        self._provider_request_timestamps: Dict[str, List[float]] = {}
+
+        # Registered External Transit Providers (Phase H17/H18)
         self._providers: Dict[str, Dict[str, Any]] = {}
         self._seed_pilot_providers()
 
@@ -189,6 +196,8 @@ class IngestionService:
             "contact_email": req.contact_email,
             "is_active": True,
             "created_at": now_iso,
+            "expires_at": req.expires_at,
+            "rate_limit_per_minute": req.rate_limit_per_minute,
             "revoked_at": None,
             "revocation_reason": None,
             "ingested_records_count": 0
@@ -202,6 +211,8 @@ class IngestionService:
             allowed_feed_types=req.allowed_feed_types,
             is_active=True,
             created_at=now_iso,
+            expires_at=req.expires_at,
+            rate_limit_per_minute=req.rate_limit_per_minute,
             ingested_records_count=0
         )
         return resp, raw_key
@@ -216,7 +227,9 @@ class IngestionService:
         Checks:
         1. Valid registered key
         2. Active integration (not revoked)
-        3. Authorized for feed_type
+        3. Expiration date check (if configured)
+        4. Sliding window rate limiting (default 60 req/min)
+        5. Authorized for feed_type
         """
         key_hash = hashlib.sha256(api_key.encode()).hexdigest()
         for provider in self._providers.values():
@@ -224,6 +237,30 @@ class IngestionService:
                 if not provider["is_active"]:
                     reason = provider.get("revocation_reason") or "Provider integration has been revoked by authority"
                     return False, f"INTEGRATION_REVOKED: {reason}", provider
+
+                # Expiration check
+                if provider.get("expires_at"):
+                    try:
+                        clean_exp = provider["expires_at"].replace("Z", "+00:00")
+                        exp_dt = datetime.fromisoformat(clean_exp)
+                        if exp_dt.tzinfo is None:
+                            exp_dt = exp_dt.replace(tzinfo=timezone.utc)
+                        if datetime.now(timezone.utc) > exp_dt:
+                            return False, f"PROVIDER_KEY_EXPIRED: Credentials expired at {provider['expires_at']}", provider
+                    except Exception:
+                        pass
+
+                # Rate limiting check (sliding 60-second window)
+                prov_id = provider["provider_id"]
+                rate_limit = provider.get("rate_limit_per_minute", 60)
+                now_ts = time.time()
+                ts_list = self._provider_request_timestamps.get(prov_id, [])
+                ts_list = [t for t in ts_list if now_ts - t < 60.0]
+                if len(ts_list) >= rate_limit:
+                    return False, f"RATE_LIMIT_EXCEEDED: Exceeded {rate_limit} requests/minute limit. Retry after 60s", provider
+                ts_list.append(now_ts)
+                self._provider_request_timestamps[prov_id] = ts_list
+
                 if feed_type and feed_type not in provider["allowed_feed_types"]:
                     return False, f"UNAUTHORIZED_FEED_TYPE: Provider not permitted to ingest {feed_type}", provider
                 provider["ingested_records_count"] += 1
@@ -241,6 +278,8 @@ class IngestionService:
                 allowed_feed_types=p["allowed_feed_types"],
                 is_active=p["is_active"],
                 created_at=p["created_at"],
+                expires_at=p.get("expires_at"),
+                rate_limit_per_minute=p.get("rate_limit_per_minute", 60),
                 revoked_at=p["revoked_at"],
                 revocation_reason=p["revocation_reason"],
                 ingested_records_count=p["ingested_records_count"]
@@ -262,6 +301,8 @@ class IngestionService:
             allowed_feed_types=p["allowed_feed_types"],
             is_active=False,
             created_at=p["created_at"],
+            expires_at=p.get("expires_at"),
+            rate_limit_per_minute=p.get("rate_limit_per_minute", 60),
             revoked_at=p["revoked_at"],
             revocation_reason=p["revocation_reason"],
             ingested_records_count=p["ingested_records_count"]
@@ -282,6 +323,8 @@ class IngestionService:
             allowed_feed_types=p["allowed_feed_types"],
             is_active=True,
             created_at=p["created_at"],
+            expires_at=p.get("expires_at"),
+            rate_limit_per_minute=p.get("rate_limit_per_minute", 60),
             revoked_at=None,
             revocation_reason=None,
             ingested_records_count=p["ingested_records_count"]
@@ -325,6 +368,16 @@ class IngestionService:
                     identifier=record_id,
                     status="REJECTED",
                     reason="INVALID_TIMESTAMP_FORMAT"
+                ))
+                continue
+
+            # NaN / Inf coordinates check
+            if math.isnan(rec.latitude) or math.isnan(rec.longitude) or math.isinf(rec.latitude) or math.isinf(rec.longitude):
+                rejected += 1
+                results.append(IngestRecordResult(
+                    identifier=record_id,
+                    status="REJECTED",
+                    reason="INVALID_COORDINATES_NAN_OR_INF: Latitude and longitude must be valid real numbers"
                 ))
                 continue
 
@@ -372,8 +425,28 @@ class IngestionService:
                     ))
                     continue
 
+                # Sudden GPS jump / impossible velocity check
+                dt_sec = (ts - last_state["last_timestamp"]).total_seconds()
+                if dt_sec > 0:
+                    d_meters = self.haversine_distance_meters(last_state["latitude"], last_state["longitude"], rec.latitude, rec.longitude)
+                    effective_speed_kmh = (d_meters / dt_sec) * 3.6
+                    if effective_speed_kmh > 120.0 and d_meters > 500.0:
+                        rejected += 1
+                        results.append(IngestRecordResult(
+                            identifier=record_id,
+                            status="REJECTED",
+                            reason=f"IMPOSSIBLE_SPEED_OR_GPS_JUMP: Calculated velocity {effective_speed_kmh:.1f} km/h (jump {d_meters:.0f}m in {dt_sec:.1f}s) exceeds physical limits"
+                        ))
+                        continue
+
+                # Signal loss & recovery tracking (>30s gap recovered)
+                if dt_sec > 30.0:
+                    self.stats["signal_recoveries"] = self.stats.get("signal_recoveries", 0) + 1
+
             # Corridor map matching & off-route detection
             map_match = self.map_match_vehicle(rec.bus_number, rec.latitude, rec.longitude)
+            if map_match.is_off_route:
+                self.stats["off_route_events"] = self.stats.get("off_route_events", 0) + 1
 
             # 3. Update in-memory telemetry state
             self._bus_telemetry_state[rec.bus_number] = {
@@ -477,6 +550,7 @@ class IngestionService:
         try:
             bus_info = gps_simulator.fleet_state.get(record.bus_number, {})
             bus_id = bus_info.get("bus_id", "a1111111-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
+            db_origin = "LIVE" if "LIVE" in str(record.data_origin) else "SIMULATED"
             await supabase_client.post("occupancy_readings", {
                 "bus_id": bus_id,
                 "passenger_count": record.stabilized_person_count,
@@ -484,7 +558,7 @@ class IngestionService:
                 "occupancy_pct": trusted_pct,
                 "crowd_level": trusted_crowd,
                 "detection_source": f"{record.model_version}_CCTV",
-                "data_origin": record.data_origin.value
+                "data_origin": db_origin
             })
         except Exception as e:
             # Non-blocking logging
@@ -731,6 +805,55 @@ class IngestionService:
             "LATENT_TELEMETRY": DataOrigin.STALE.value
         }
 
+        # Operational metrics enrichment for Phase H18 (cached)
+        if not hasattr(self, "_cached_forecaster_eval") or self._cached_forecaster_eval is None:
+            try:
+                from app.services.demand_forecaster import demand_forecaster
+                fe = demand_forecaster.get_pilot_forecasting_evaluation()
+                self._cached_forecaster_eval = {
+                    "model_version": fe.model_version,
+                    "data_quality": fe.training_data_quality,
+                    "total_samples": fe.total_samples,
+                    "train_pct": fe.train_split_pct,
+                    "val_pct": fe.validation_split_pct,
+                    "test_pct": fe.test_split_pct,
+                    "overall_metrics": [m.model_dump() for m in fe.overall_metrics],
+                    "overfitting_risk": fe.overfitting_risk_assessment
+                }
+            except Exception as e:
+                print(f"[Pilot Monitor Forecaster Warning] {e}")
+
+        if not hasattr(self, "_cached_cv_summary") or self._cached_cv_summary is None:
+            try:
+                from cv.evaluator import cv_evaluator
+                cv_rep = cv_evaluator.run_full_evaluation(seed=42)
+                self._cached_cv_summary = {
+                    "scenarios_count": cv_rep.total_scenarios_evaluated,
+                    "raw_mae": cv_rep.aggregate_raw_mae,
+                    "smoothed_mae": cv_rep.aggregate_smoothed_mae,
+                    "smoothed_rmse": cv_rep.aggregate_smoothed_rmse,
+                    "mape_pct": cv_rep.aggregate_mape_pct,
+                    "fps": cv_rep.aggregate_fps,
+                    "p95_latency_ms": cv_rep.aggregate_p95_inference_ms,
+                    "precision": cv_rep.aggregate_precision,
+                    "recall": cv_rep.aggregate_recall,
+                    "f1_score": cv_rep.aggregate_f1_score,
+                    "stabilization_gain_pct": cv_rep.stabilization_improvement_pct,
+                    "zero_biometrics_passed": cv_rep.overall_zero_biometrics_passed
+                }
+            except Exception as e:
+                print(f"[Pilot Monitor CV Warning] {e}")
+
+        forecaster_eval = getattr(self, "_cached_forecaster_eval", None)
+        cv_summary = getattr(self, "_cached_cv_summary", None)
+
+        rec_summary = None
+        try:
+            from app.services.recommendation_engine import recommendation_engine
+            rec_summary = recommendation_engine.get_analytics_summary().model_dump()
+        except Exception as e:
+            print(f"[Pilot Monitor Rec Warning] {e}")
+
         return PilotMonitoringDashboardResponse(
             total_active_vehicles=total_fleet,
             connected_vehicles_count=connected,
@@ -753,7 +876,109 @@ class IngestionService:
                 "min_lng": KOCHI_MIN_LNG,
                 "max_lng": KOCHI_MAX_LNG
             },
+            forecaster_evaluation=forecaster_eval,
+            cv_metrics_summary=cv_summary,
+            failed_ingestion_events_count=self.stats.get("total_gps_rejected", 0) + self.stats.get("total_cctv_rejected", 0),
+            off_route_alerts_count=self.stats.get("off_route_events", 0),
+            signal_recoveries_count=self.stats.get("signal_recoveries", 0),
+            recommendation_analytics_summary=rec_summary,
             timestamp=now.isoformat()
         )
+
+    def list_transit_adapters(self) -> List[TransitAdapterSpec]:
+        """
+        Returns preconfigured Greater Kochi transit adapter integration specifications.
+        Clearly labels live vs simulated status to prevent fictitious integrations.
+        """
+        now_iso = datetime.now(timezone.utc).isoformat()
+        return [
+            TransitAdapterSpec(
+                adapter_id="KSRTC_SWIFT_AVL_ADAPTER",
+                adapter_name="KSRTC-SWIFT GPS Telematics Push Adapter",
+                provider_type="KSRTC",
+                feed_type="AVL_GPS",
+                protocol="HTTP_POST_JSON",
+                status="CONFIGURED_READY_FOR_FIELD",
+                truth_label="LIVE DATA (WHEN CONNECTED) / BENCHMARK (STAGING)",
+                endpoint="/api/ingest/gps",
+                sample_payload={
+                    "feed_id": "KSRTC_SWIFT_AVL",
+                    "records": [{
+                        "bus_number": "205",
+                        "latitude": 10.0270,
+                        "longitude": 76.3080,
+                        "speed_kmh": 28.5,
+                        "heading_deg": 182.0,
+                        "timestamp": now_iso,
+                        "sequence_number": 1,
+                        "data_origin": "LIVE DATA"
+                    }]
+                }
+            ),
+            TransitAdapterSpec(
+                adapter_id="KMRL_FEEDER_AVL_ADAPTER",
+                adapter_name="KMRL Feeder Bus Telematics Ingestion Adapter",
+                provider_type="KMRL",
+                feed_type="AVL_GPS",
+                protocol="HTTP_POST_JSON",
+                status="CONFIGURED_READY_FOR_FIELD",
+                truth_label="LIVE DATA (WHEN CONNECTED) / BENCHMARK (STAGING)",
+                endpoint="/api/ingest/gps",
+                sample_payload={
+                    "feed_id": "KMRL_FEEDER_AVL",
+                    "records": [{
+                        "bus_number": "14A",
+                        "latitude": 9.9922,
+                        "longitude": 76.2974,
+                        "speed_kmh": 24.0,
+                        "heading_deg": 95.0,
+                        "timestamp": now_iso,
+                        "sequence_number": 1,
+                        "data_origin": "LIVE DATA"
+                    }]
+                }
+            ),
+            TransitAdapterSpec(
+                adapter_id="CCTV_HEADCOUNT_GATEWAY_ADAPTER",
+                adapter_name="BusSense Edge Camera Headcount Gateway (Zero-Biometrics)",
+                provider_type="BUSSENSE_EDGE",
+                feed_type="CCTV_OCCUPANCY",
+                protocol="HTTP_POST_JSON",
+                status="CONFIGURED_READY_FOR_FIELD",
+                truth_label="CV REPLAY (TESTED) / LIVE STREAM (FIELD)",
+                endpoint="/api/ingest/cctv-occupancy",
+                sample_payload={
+                    "bus_number": "205",
+                    "timestamp": now_iso,
+                    "raw_person_count": 28,
+                    "stabilized_person_count": 27,
+                    "capacity": 55,
+                    "confidence_score": 0.91,
+                    "model_version": "yolov8n_coco",
+                    "camera_id": "BUS_DOOR_CAM_01",
+                    "privacy_standard": "PERSON_COUNTING_ONLY_NO_BIOMETRICS",
+                    "data_origin": "CV REPLAY"
+                }
+            ),
+            TransitAdapterSpec(
+                adapter_id="KERALA_POLICE_DISRUPTION_ADAPTER",
+                adapter_name="Kerala Police / Traffic Police Incident Feed Adapter",
+                provider_type="KERALA_POLICE",
+                feed_type="DISRUPTION",
+                protocol="HTTP_POST_JSON",
+                status="SIMULATED_ADAPTER_NO_PROD_ENDPOINT",
+                truth_label="SIMULATED DATA",
+                endpoint="/api/ingest/disruptions",
+                sample_payload={
+                    "route_number": "205",
+                    "cause": "TRAFFIC_CONGESTION",
+                    "severity": "MEDIUM",
+                    "description": "Slow vehicle movement near Edappally Toll junction due to metro feeder traffic",
+                    "affected_stops": ["edappally toll & lulu terminal"],
+                    "estimated_duration_mins": 25,
+                    "is_active": True
+                }
+            )
+        ]
 
 ingestion_service = IngestionService()

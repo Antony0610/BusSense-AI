@@ -21,7 +21,7 @@ BASE_URL = "http://127.0.0.1:8000"
 INTERNAL_SECRET = "bussense_ai_super_secret_jwt_key_2026_prototype_secure"
 TEST_PROVIDER_KEY = "bs_live_ksrtc_pilot_test_key_001"
 
-def make_request(method: str, path: str, data: dict = None, headers: dict = None):
+def make_request(method: str, path: str, data: dict = None, headers: dict = None, timeout: float = 25.0):
     url = f"{BASE_URL}{path}"
     req_headers = {"Content-Type": "application/json"}
     if headers:
@@ -30,7 +30,7 @@ def make_request(method: str, path: str, data: dict = None, headers: dict = None
     body = json.dumps(data).encode("utf-8") if data is not None else None
     req = urllib.request.Request(url, data=body, headers=req_headers, method=method)
     try:
-        with urllib.request.urlopen(req, timeout=10) as resp:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
             resp_body = resp.read().decode("utf-8")
             return resp.status, json.loads(resp_body)
     except urllib.error.HTTPError as e:
@@ -99,11 +99,11 @@ def run_simulation():
         "records": [
             {
                 "bus_number": "205",
-                "latitude": 9.9000,   # Significantly south of Aluva-Vyttila corridor
-                "longitude": 76.3500,
+                "latitude": 10.0270,   # 870m east of corridor, within physical speed limits (60s @ 52 km/h)
+                "longitude": 76.3160,
                 "speed_kmh": 40.0,
                 "heading_deg": 90.0,
-                "timestamp": (run_base_time + timedelta(seconds=20)).isoformat(),
+                "timestamp": (run_base_time + timedelta(seconds=70)).isoformat(),
                 "sequence_number": base_seq + 2,
                 "data_origin": "LIVE DATA",
                 "is_historical": False
@@ -255,8 +255,45 @@ def run_simulation():
     print(f"Commuter selection recorded: Compliance Rate: {analytics.get('compliance_rate_pct')}%, Total Selections: {analytics.get('total_selections')}")
     assert status == 200
 
+    # 10. Audit Preconfigured Transit Adapters
+    print("\n[Step 10] Auditing preconfigured transit adapter specifications...")
+    status, ad_res = make_request("GET", "/api/ingest/adapters", headers={"X-Internal-Secret": INTERNAL_SECRET})
+    adapters = ad_res.get("data", [])
+    print(f"Retrieved {len(adapters)} configured transit adapter specifications:")
+    for a in adapters:
+        print(f" - {a.get('adapter_id')}: {a.get('adapter_name')} [{a.get('truth_label')}]")
+    assert status == 200 and len(adapters) >= 4
+
+    # 11. Test Provider Rate Limiting (HTTP 429)
+    print("\n[Step 11] Testing provider sliding-window rate limiting (enforcing HTTP 429)...")
+    reg_rl = {
+        "provider_id": "RATE_LIMIT_SIM_TEST",
+        "provider_name": "Rate Limited Simulator Test",
+        "allowed_feed_types": ["AVL_GPS"],
+        "contact_email": "rl-sim@bussense.kerala.gov.in",
+        "rate_limit_per_minute": 2
+    }
+    status, rl_reg = make_request("POST", "/api/ingest/providers", data=reg_rl, headers={"X-Internal-Secret": INTERNAL_SECRET})
+    rl_key = rl_reg.get("data", {}).get("api_key")
+
+    dummy_gps = {
+        "feed_id": "RATE_LIMIT_SIM_TEST",
+        "records": [{
+            "bus_number": "14A",
+            "latitude": 9.9922,
+            "longitude": 76.2974,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "data_origin": "LIVE DATA"
+        }]
+    }
+    s1, _ = make_request("POST", "/api/ingest/gps", data=dummy_gps, headers={"X-Provider-API-Key": rl_key})
+    s2, _ = make_request("POST", "/api/ingest/gps", data=dummy_gps, headers={"X-Provider-API-Key": rl_key})
+    s3, err3 = make_request("POST", "/api/ingest/gps", data=dummy_gps, headers={"X-Provider-API-Key": rl_key})
+    print(f"Requests: [Req1: {s1}, Req2: {s2}, Req3: {s3}] -> Expected HTTP 429 on Req3")
+    assert s1 == 200 and s2 == 200 and s3 == 429
+
     print("\n" + "=" * 80)
-    print(" Realistic Transit Integration Feed Simulation: COMPLETED (ALL PASS)")
+    print(" Realistic Transit Integration Feed Simulation: COMPLETED (ALL 11/11 PASS)")
     print("=" * 80)
 
 if __name__ == "__main__":

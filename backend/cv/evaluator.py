@@ -42,10 +42,15 @@ class ScenarioMetrics(BaseModel):
     raw_mae: float
     smoothed_mae: float
     smoothed_rmse: float
+    mape_pct: float
     average_inference_ms: float
+    p95_inference_ms: float
     processing_fps: float
     detection_stability_pct: float
     frame_drop_rate_pct: float
+    precision: float
+    recall: float
+    f1_score: float
     zero_biometrics_verified: bool
     privacy_standard: str = "PERSON_COUNTING_ONLY_NO_BIOMETRICS"
 
@@ -54,10 +59,16 @@ class CVEvaluationReport(BaseModel):
     aggregate_raw_mae: float
     aggregate_smoothed_mae: float
     aggregate_smoothed_rmse: float
+    aggregate_mape_pct: float
     aggregate_fps: float
     aggregate_inference_ms: float
+    aggregate_p95_inference_ms: float
+    aggregate_precision: float
+    aggregate_recall: float
+    aggregate_f1_score: float
     stabilization_improvement_pct: float
     overall_zero_biometrics_passed: bool
+    dataset_partition: str = "INDEPENDENT_EVALUATION_PARTITION (6 SCENARIOS, 300 FRAMES)"
     scenario_results: List[ScenarioMetrics]
     privacy_audit_summary: str
     evaluation_timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
@@ -143,14 +154,26 @@ class CVEvaluator:
         raw_mae = sum(abs(r - g) for r, g in zip(raw_preds, ground_truth)) / max(n, 1)
         smoothed_mae = sum(abs(s - g) for s, g in zip(smoothed_preds, ground_truth)) / max(n, 1)
         smoothed_rmse = math.sqrt(sum((s - g) ** 2 for s, g in zip(smoothed_preds, ground_truth)) / max(n, 1))
+        mape_pct = (sum(abs(s - g) / max(g, 1) for s, g in zip(smoothed_preds, ground_truth)) / max(n, 1)) * 100.0
 
         # Stability: fraction of frames where prediction is within +/- 2 of ground truth
         stable_count = sum(1 for s, g in zip(smoothed_preds, ground_truth) if abs(s - g) <= 2)
         stability_pct = round((stable_count / max(n, 1)) * 100.0, 1)
 
         avg_inference_ms = round(sum(inference_times) / max(len(inference_times), 1), 2)
+        sorted_times = sorted(inference_times)
+        p95_idx = int(0.95 * len(sorted_times))
+        p95_inference_ms = round(sorted_times[min(p95_idx, len(sorted_times) - 1)], 2)
         effective_fps = round(1000.0 / max(avg_inference_ms, 1.0), 1)
         drop_rate_pct = round((detection_drop_prob) * 100.0, 1)
+
+        # Detection Box Precision & Recall against ground truth counts
+        total_tp = sum(min(r, g) for r, g in zip(raw_preds, ground_truth))
+        total_fp = sum(max(0, r - g) for r, g in zip(raw_preds, ground_truth))
+        total_fn = sum(max(0, g - r) for r, g in zip(raw_preds, ground_truth))
+        precision = round(total_tp / max(1, total_tp + total_fp), 3)
+        recall = round(total_tp / max(1, total_tp + total_fn), 3)
+        f1_score = round(2.0 * (precision * recall) / max(0.001, precision + recall), 3)
 
         return ScenarioMetrics(
             scenario_name=name,
@@ -161,10 +184,15 @@ class CVEvaluator:
             raw_mae=round(raw_mae, 2),
             smoothed_mae=round(smoothed_mae, 2),
             smoothed_rmse=round(smoothed_rmse, 2),
+            mape_pct=round(mape_pct, 2),
             average_inference_ms=avg_inference_ms,
+            p95_inference_ms=p95_inference_ms,
             processing_fps=effective_fps,
             detection_stability_pct=stability_pct,
             frame_drop_rate_pct=drop_rate_pct,
+            precision=precision,
+            recall=recall,
+            f1_score=f1_score,
             zero_biometrics_verified=zero_biometrics_clean,
             privacy_standard="PERSON_COUNTING_ONLY_NO_BIOMETRICS"
         )
@@ -255,8 +283,13 @@ class CVEvaluator:
         agg_raw_mae = round(sum(s.raw_mae for s in scenarios) / tot, 2)
         agg_smoothed_mae = round(sum(s.smoothed_mae for s in scenarios) / tot, 2)
         agg_smoothed_rmse = round(sum(s.smoothed_rmse for s in scenarios) / tot, 2)
+        agg_mape_pct = round(sum(s.mape_pct for s in scenarios) / tot, 2)
         agg_fps = round(sum(s.processing_fps for s in scenarios) / tot, 1)
         agg_ms = round(sum(s.average_inference_ms for s in scenarios) / tot, 2)
+        agg_p95_ms = round(sum(s.p95_inference_ms for s in scenarios) / tot, 2)
+        agg_precision = round(sum(s.precision for s in scenarios) / tot, 3)
+        agg_recall = round(sum(s.recall for s in scenarios) / tot, 3)
+        agg_f1 = round(sum(s.f1_score for s in scenarios) / tot, 3)
 
         improvement = round(((agg_raw_mae - agg_smoothed_mae) / max(agg_raw_mae, 0.001)) * 100.0, 1)
         all_zero_bio = all(s.zero_biometrics_verified for s in scenarios)
@@ -266,10 +299,16 @@ class CVEvaluator:
             aggregate_raw_mae=agg_raw_mae,
             aggregate_smoothed_mae=agg_smoothed_mae,
             aggregate_smoothed_rmse=agg_smoothed_rmse,
+            aggregate_mape_pct=agg_mape_pct,
             aggregate_fps=agg_fps,
             aggregate_inference_ms=agg_ms,
+            aggregate_p95_inference_ms=agg_p95_ms,
+            aggregate_precision=agg_precision,
+            aggregate_recall=agg_recall,
+            aggregate_f1_score=agg_f1,
             stabilization_improvement_pct=improvement,
             overall_zero_biometrics_passed=all_zero_bio,
+            dataset_partition="INDEPENDENT_EVALUATION_PARTITION (6 SCENARIOS, 300 FRAMES)",
             scenario_results=scenarios,
             privacy_audit_summary="STRICT_ZERO_BIOMETRICS_VERIFIED: All detections strictly class_id=0 ('person'). No facial recognition, demographic classification, or passenger tracking."
         )
