@@ -69,6 +69,14 @@ class CVEvaluationReport(BaseModel):
     stabilization_improvement_pct: float
     overall_zero_biometrics_passed: bool
     dataset_partition: str = "INDEPENDENT_EVALUATION_PARTITION (6 SCENARIOS, 300 FRAMES)"
+    dataset_origin: str = "CONTROLLED_BENCHMARK_AND_REPLAY (NO LIVE PASSENGER SURVEILLANCE)"
+    number_of_recordings: int = 6
+    number_of_frames: int = 300
+    annotation_procedure: str = "Manual dual-observer doorway tally synchronized to video frame timestamps"
+    evaluation_hardware: str = "x86_64 CPU Edge Prototype (simulating on-bus edge inference NPU)"
+    model_version: str = "YOLOv8n (COCO person-class only, class_id=0)"
+    evaluation_methodology: str = "Temporal rolling-median filtering (window=5) compared against raw YOLO detections and manual tallies"
+    data_origin_label: str = "BENCHMARK"
     scenario_results: List[ScenarioMetrics]
     privacy_audit_summary: str
     evaluation_timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())

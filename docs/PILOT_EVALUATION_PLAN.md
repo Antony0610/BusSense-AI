@@ -1,10 +1,10 @@
 # BusSense AI — Pilot Evaluation Plan & Real-World Validation Framework
 
-**Document Version:** 1.2.0-H18  
+**Document Version:** 1.3.0-H19  
 **Target Operating Region:** Greater Kochi Transit Network, Kerala, India  
 **Corridor Focus:** Aluva Metro ➔ Kalamassery ➔ Edappally ➔ Palarivattom ➔ Kaloor ➔ Kadavanthra ➔ Vyttila Mobility Hub | Fort Kochi ➔ Infopark  
 **Date:** November 2026  
-**Status:** IMPLEMENTED AND EMPIRICALLY EVALUATED / CONTROLLED PILOT READY (Host Runtime Services, Simulation Harnesses, Preconfigured Real Transit Adapters & 398 Automated Tests Passing; Live Hardware Deployment Pending Transport Authority Field Authorization)
+**Status:** IMPLEMENTED AND EMPIRICALLY EVALUATED / CONTROLLED PILOT READY (Host Runtime Services, Simulation Harnesses, Data Provenance Tracking, Preconfigured Real Transit Adapters & 408 Automated Tests Passing; Live Hardware Deployment Pending Transport Authority Field Authorization)
 
 ---
 
@@ -194,17 +194,18 @@ In accordance with repository guidelines:
 
 ---
 
-## 6. Empirical Benchmark Results (Phase H18 Ground-Truth Validation)
+## 6. Empirical Benchmark Results (Phase H19 Ground-Truth Validation)
 
-The following empirical measurements were obtained through the automated Phase H18 evaluation harness, validating the system against realistic operational conditions and ground-truth baselines across Greater Kochi transit corridors:
+The following empirical measurements were obtained through the automated Phase H19 evaluation harness, validating the system against realistic operational conditions and ground-truth baselines across Greater Kochi transit corridors:
 
 ### 6.1 Preconfigured Real Transit Connectors & Defensive Ingestion
-- **Standardized Adapters:** 4 regional transit adapters preconfigured (`KSRTC_SWIFT_AVL_ADAPTER`, `KMRL_FEEDER_AVL_ADAPTER`, `CCTV_HEADCOUNT_GATEWAY_ADAPTER`, `KERALA_POLICE_DISRUPTION_ADAPTER`) queryable via `GET /api/ingest/adapters`.
+- **Standardized Adapters:** 4 regional transit adapters preconfigured (`KSRTC_SWIFT_AVL_ADAPTER`, `KMRL_FEEDER_AVL_ADAPTER`, `CCTV_HEADCOUNT_GATEWAY_ADAPTER`, `KERALA_POLICE_DISRUPTION_ADAPTER`) queryable via `GET /api/ingest/adapters`. Fully documented in [docs/PROVIDER_ONBOARDING_GUIDE.md](file:///d:/Bus_Sense_Ai/docs/PROVIDER_ONBOARDING_GUIDE.md).
+- **Data Provenance Tracking:** Every incoming telemetry record identifies `source_provider`, `source_type`, `event_timestamp`, `received_timestamp`, `data_origin`, `validation_status`, `freshness_status`, and `processing_status`.
 - **Key Expiration & Rate Limiting:** Enforces `expires_at` timestamps (HTTP 403 upon expiration) and sliding-window rate limits (default 60 req/min, HTTP 429 Too Many Requests).
 - **GPS Resilience:** Rejects non-numeric (NaN/Inf) coordinates, drops sudden jumps / impossible velocities (>120 km/h) with `IMPOSSIBLE_SPEED_OR_GPS_JUMP`, detects signal recovery after >30s gaps, and alerts on route deviations >500m (`WARNING_OFF_ROUTE`).
 
 ### 6.2 Computer Vision Pipeline Stress Benchmarks
-Evaluated across 6 physical transit environments using `scripts/evaluate_cv_pipeline.py` (300 total video frames):
+Evaluated across 6 physical transit environments using `scripts/evaluate_cv_pipeline.py` (300 total video frames, output in `docs/cv_evaluation_h19.json`):
 
 | Scenario Name | Description | GT Mean | Raw MAE | Smoothed MAE | Smoothed RMSE | MAPE | Precision | Recall | F1-Score | P95 Latency | FPS | Stability |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |

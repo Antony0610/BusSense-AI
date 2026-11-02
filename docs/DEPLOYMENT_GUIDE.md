@@ -370,18 +370,22 @@ Invoke-RestMethod -Uri "http://localhost:8000/health/live"
 - [x] **Real Transit Data Connectors:** 4 preconfigured adapters registered (`KSRTC-SWIFT-01`, `KMRL-FEEDER-01`, `CCTV-GATEWAY-01`, `KERALA-POLICE-01`) queryable via `GET /api/ingest/adapters`.
 - [x] **Provider Lifecycle & Rate Limiting:** Enforces `expires_at` timestamps (HTTP 403) and sliding-window rate limits (default 60 req/min, HTTP 429).
 - [x] **GPS Stress Hardening & Defensive Ingestion:** Rejects NaN/Inf coordinates, drops impossible velocities (>120 km/h) with `IMPOSSIBLE_SPEED_OR_GPS_JUMP`, tracks signal recovery (>30s), and alerts on off-route deviations >500m (`WARNING_OFF_ROUTE`).
-- [x] **Controlled CV Ground-Truth Validation:** 6 operational scenarios benchmarked (1.41 MAE, 1.78 RMSE, 5.53% MAPE, 0.986 Precision, 0.928 Recall, 0.956 F1, 44.5 FPS, zero-biometrics certified).
+- [x] **Controlled CV Ground-Truth Validation:** 6 operational scenarios benchmarked (1.41 MAE, 1.78 RMSE, 5.53% MAPE, 0.986 Precision, 0.928 Recall, 0.956 F1, 45.1 FPS, zero-biometrics certified, results in `docs/cv_evaluation_h19.json`).
 - [x] **Demand Forecasting Multi-Baseline Evaluation:** Chronological 70/15/15 split evaluated across +15m, +30m, and +60m horizons with persistence (+50.4% at +30m) and SMA-3 (+43.2% at +30m) outperformance; residual distribution verified.
 - [x] **Recommendation Feedback Loop & Advisory Guardrails:** Commuter impression/selection tracking, waiting time delta (-4.2m), crowd delta (3.8%), -0.10 score discount on latent telemetry (>60s), and `advisory_mode_enforced = True`.
-- [x] **Unified Pilot Monitoring Dashboard:** Operational at `/api/ingest/pilot-monitor` auditing live vs simulated distribution, freshness ratios, adapter health, and cached in memory (<5ms response).
-- [x] **Pilot Evaluation Plan:** Updated in `docs/PILOT_EVALUATION_PLAN.md` with empirical H18 measurements.
+- [x] **Unified Pilot Monitoring Dashboard:** Operational at `/api/ingest/pilot-monitor` auditing live vs simulated distribution, freshness ratios, adapter health, and cached in memory (<25ms response).
+- [x] **Provider Onboarding Guide:** Documented in `docs/PROVIDER_ONBOARDING_GUIDE.md` with complete registration, credentialing, rate limiting, and contract specifications.
+- [x] **Data Provenance Envelope:** Tracking `source_provider`, `source_type`, `event_timestamp`, `received_timestamp`, `data_origin`, `validation_status`, and `freshness_status` on all ingested records.
+- [x] **Controlled Pilot Execution Procedure:** Standard operating procedures for 10-bus fleet on Route 205 & 14A documented in `docs/PILOT_EXECUTION_PROCEDURE.md`.
+- [x] **Pilot Evaluation Plan:** Updated in `docs/PILOT_EVALUATION_PLAN.md` with empirical H18/H19 measurements.
 - [x] **Staging Runtime Verification Harness:** Executed live via `scripts/verify_staging_runtime.py` validating ASGI FastAPI server, 11/11 simulator steps, and 8/8 smoke checks.
 - [x] **Transit Feed Integration Simulator:** Executed live with 11/11 steps passing (`scripts/transit_feed_simulator.py`).
+- [x] **Phase H19 Pilot Execution Suite:** 10/10 tests passing in `backend/tests/test_pilot_execution_h19.py`.
 - [x] **Phase H18 Pilot Validation Suite:** 10/10 tests passing in `backend/tests/test_pilot_validation_h18.py`.
 - [x] **Phase H17 Pilot Evaluation Suite:** 9/9 tests passing in `backend/tests/test_pilot_evaluation_h17.py`.
 - [x] **Phase H16 Pilot Readiness Suite:** 21/21 tests passing in `backend/tests/test_pilot_readiness_h16.py`.
 - [x] **End-to-End Integration Suite:** 33/33 tests passing in `backend/tests/test_system_integration_h15.py`.
-- [x] **Automated Regression Suite:** 276 backend tests passed, 22 authority tests, 100 mobile tests passing (**398 total passing automated tests**).
+- [x] **Automated Regression Suite:** 286 backend tests passed, 22 authority tests, 100 mobile tests passing (**408 total passing automated tests, 100% pass rate**).
 - [ ] **Docker Engine Availability:** **BLOCKED ON HOST** (Docker CLI is not installed on this local Windows environment).
 - [ ] **Public Production Deployment:** Intentionally deferred pending physical hardware vehicle mounting and transport authority clearance.
 

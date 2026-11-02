@@ -6,7 +6,7 @@ Defines structured input validation models for external transit feeds:
 - Route schedules, stops, and timetables
 - Incidents and service disruptions
 """
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from datetime import datetime, timezone
 from pydantic import BaseModel, Field, field_validator
 from app.schemas.common import DataOrigin, CrowdLevel
@@ -128,6 +128,14 @@ class IngestRecordResult(BaseModel):
     identifier: str
     status: str # "ACCEPTED", "REJECTED"
     reason: Optional[str] = None
+    source_provider: Optional[str] = None
+    source_type: Optional[str] = None
+    event_timestamp: Optional[str] = None
+    received_timestamp: Optional[str] = None
+    data_origin: Optional[str] = None
+    validation_status: Optional[str] = None
+    freshness_status: Optional[str] = None
+    processing_status: Optional[str] = None
 
 class IngestSummaryResponse(BaseModel):
     feed_id: Optional[str] = None
@@ -139,6 +147,7 @@ class IngestSummaryResponse(BaseModel):
     freshness_status: str # "FRESH", "STALE", "HISTORICAL"
     data_origin: DataOrigin
     processed_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    provenance_records: Optional[List[Dict[str, Any]]] = None
 
 # =========================================================================
 # Phase H17: External Provider Integration, Map-Matching & Pilot Monitoring
@@ -177,6 +186,16 @@ class TransitAdapterSpec(BaseModel):
     truth_label: str
     endpoint: str
     sample_payload: dict
+    expected_source: str = "Authorized regional transit authority or operator"
+    required_authorization: str = "Transport Authority Inter-Agency Agreement / Operational API License"
+    auth_method: str = "SHA-256 API Key Header (X-Provider-API-Key)"
+    data_format: str = "JSON payload over HTTPS POST"
+    expected_update_frequency_sec: int = 5
+    required_fields: List[str] = Field(default_factory=list)
+    validation_rules: List[str] = Field(default_factory=list)
+    failure_handling: str = "Graceful retry with exponential backoff; fallback to scheduled headway"
+    rate_limit_per_minute: int = 60
+    data_retention_days: int = 30
 
 class ProviderRevocationRequest(BaseModel):
     reason: str = Field(..., min_length=5, max_length=256, description="Audit reason for revoking provider integration")

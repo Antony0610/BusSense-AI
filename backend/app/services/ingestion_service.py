@@ -377,7 +377,15 @@ class IngestionService:
                 results.append(IngestRecordResult(
                     identifier=record_id,
                     status="REJECTED",
-                    reason="INVALID_COORDINATES_NAN_OR_INF: Latitude and longitude must be valid real numbers"
+                    reason="INVALID_COORDINATES_NAN_OR_INF: Latitude and longitude must be valid real numbers",
+                    source_provider=batch.feed_id,
+                    source_type="AVL_GPS",
+                    event_timestamp=rec.timestamp,
+                    received_timestamp=now.isoformat(),
+                    data_origin=str(rec.data_origin.value if hasattr(rec.data_origin, "value") else rec.data_origin),
+                    validation_status="INVALID_COORDINATES",
+                    freshness_status="INVALID",
+                    processing_status="REJECTED"
                 ))
                 continue
 
@@ -387,7 +395,15 @@ class IngestionService:
                 results.append(IngestRecordResult(
                     identifier=record_id,
                     status="REJECTED",
-                    reason=f"FUTURE_TIMESTAMP: Record timestamp {rec.timestamp} is ahead of current server time"
+                    reason=f"FUTURE_TIMESTAMP: Record timestamp {rec.timestamp} is ahead of current server time",
+                    source_provider=batch.feed_id,
+                    source_type="AVL_GPS",
+                    event_timestamp=rec.timestamp,
+                    received_timestamp=now.isoformat(),
+                    data_origin=str(rec.data_origin.value if hasattr(rec.data_origin, "value") else rec.data_origin),
+                    validation_status="FUTURE_TIMESTAMP",
+                    freshness_status="INVALID",
+                    processing_status="REJECTED"
                 ))
                 continue
 
@@ -397,7 +413,15 @@ class IngestionService:
                 results.append(IngestRecordResult(
                     identifier=record_id,
                     status="REJECTED",
-                    reason=f"STALE_TELEMETRY: Record is older than 15 minutes and is_historical=False"
+                    reason=f"STALE_TELEMETRY: Record is older than 15 minutes and is_historical=False",
+                    source_provider=batch.feed_id,
+                    source_type="AVL_GPS",
+                    event_timestamp=rec.timestamp,
+                    received_timestamp=now.isoformat(),
+                    data_origin=str(rec.data_origin.value if hasattr(rec.data_origin, "value") else rec.data_origin),
+                    validation_status="STALE_RECORD",
+                    freshness_status="STALE",
+                    processing_status="REJECTED"
                 ))
                 continue
 
@@ -411,7 +435,15 @@ class IngestionService:
                         results.append(IngestRecordResult(
                             identifier=record_id,
                             status="REJECTED",
-                            reason=f"DUPLICATE_OR_OUT_OF_ORDER_SEQUENCE: Received seq {rec.sequence_number} <= previous {last_state['last_seq']}"
+                            reason=f"DUPLICATE_OR_OUT_OF_ORDER_SEQUENCE: Received seq {rec.sequence_number} <= previous {last_state['last_seq']}",
+                            source_provider=batch.feed_id,
+                            source_type="AVL_GPS",
+                            event_timestamp=rec.timestamp,
+                            received_timestamp=now.isoformat(),
+                            data_origin=str(rec.data_origin.value if hasattr(rec.data_origin, "value") else rec.data_origin),
+                            validation_status="OUT_OF_ORDER_SEQUENCE",
+                            freshness_status="STALE",
+                            processing_status="REJECTED"
                         ))
                         continue
 
@@ -421,7 +453,15 @@ class IngestionService:
                     results.append(IngestRecordResult(
                         identifier=record_id,
                         status="REJECTED",
-                        reason=f"OUT_OF_ORDER_TIMESTAMP: Received timestamp {ts.isoformat()} <= previous {last_state['last_timestamp'].isoformat()}"
+                        reason=f"OUT_OF_ORDER_TIMESTAMP: Received timestamp {ts.isoformat()} <= previous {last_state['last_timestamp'].isoformat()}",
+                        source_provider=batch.feed_id,
+                        source_type="AVL_GPS",
+                        event_timestamp=rec.timestamp,
+                        received_timestamp=now.isoformat(),
+                        data_origin=str(rec.data_origin.value if hasattr(rec.data_origin, "value") else rec.data_origin),
+                        validation_status="OUT_OF_ORDER_TIMESTAMP",
+                        freshness_status="STALE",
+                        processing_status="REJECTED"
                     ))
                     continue
 
@@ -435,7 +475,15 @@ class IngestionService:
                         results.append(IngestRecordResult(
                             identifier=record_id,
                             status="REJECTED",
-                            reason=f"IMPOSSIBLE_SPEED_OR_GPS_JUMP: Calculated velocity {effective_speed_kmh:.1f} km/h (jump {d_meters:.0f}m in {dt_sec:.1f}s) exceeds physical limits"
+                            reason=f"IMPOSSIBLE_SPEED_OR_GPS_JUMP: Calculated velocity {effective_speed_kmh:.1f} km/h (jump {d_meters:.0f}m in {dt_sec:.1f}s) exceeds physical limits",
+                            source_provider=batch.feed_id,
+                            source_type="AVL_GPS",
+                            event_timestamp=rec.timestamp,
+                            received_timestamp=now.isoformat(),
+                            data_origin=str(rec.data_origin.value if hasattr(rec.data_origin, "value") else rec.data_origin),
+                            validation_status="IMPOSSIBLE_SPEED_OR_GPS_JUMP",
+                            freshness_status="STALE",
+                            processing_status="REJECTED"
                         ))
                         continue
 
@@ -481,7 +529,15 @@ class IngestionService:
             results.append(IngestRecordResult(
                 identifier=record_id,
                 status="ACCEPTED",
-                reason=warn_reason
+                reason=warn_reason,
+                source_provider=batch.feed_id,
+                source_type="AVL_GPS",
+                event_timestamp=rec.timestamp,
+                received_timestamp=now.isoformat(),
+                data_origin=str(rec.data_origin.value if hasattr(rec.data_origin, "value") else rec.data_origin),
+                validation_status="VALID",
+                freshness_status="HISTORICAL" if rec.is_historical else ("STALE" if (now - ts).total_seconds() > 30.0 else "FRESH"),
+                processing_status="ACCEPTED"
             ))
 
         self.stats["total_gps_accepted"] += accepted
@@ -523,7 +579,15 @@ class IngestionService:
                 results=[IngestRecordResult(
                     identifier=f"{record.bus_number}@{record.timestamp}",
                     status="REJECTED",
-                    reason=f"BUS_NOT_FOUND: Bus '{record.bus_number}' not registered in fleet"
+                    reason=f"BUS_NOT_FOUND: Bus '{record.bus_number}' not registered in fleet",
+                    source_provider=record.camera_id,
+                    source_type="CCTV_OCCUPANCY",
+                    event_timestamp=record.timestamp,
+                    received_timestamp=now.isoformat(),
+                    data_origin=str(record.data_origin.value if hasattr(record.data_origin, "value") else record.data_origin),
+                    validation_status="UNKNOWN_BUS",
+                    freshness_status="STALE",
+                    processing_status="REJECTED"
                 )],
                 freshness_status="STALE",
                 data_origin=DataOrigin.CV_REPLAY
@@ -591,7 +655,15 @@ class IngestionService:
             results=[IngestRecordResult(
                 identifier=f"{record.bus_number}@{record.timestamp}",
                 status="ACCEPTED",
-                reason=None
+                reason=None,
+                source_provider=record.camera_id,
+                source_type="CCTV_OCCUPANCY",
+                event_timestamp=record.timestamp,
+                received_timestamp=now.isoformat(),
+                data_origin=str(record.data_origin.value if hasattr(record.data_origin, "value") else record.data_origin),
+                validation_status="VALID",
+                freshness_status="FRESH",
+                processing_status="ACCEPTED"
             )],
             freshness_status="FRESH",
             data_origin=record.data_origin
@@ -913,7 +985,23 @@ class IngestionService:
                         "sequence_number": 1,
                         "data_origin": "LIVE DATA"
                     }]
-                }
+                },
+                expected_source="KSRTC-SWIFT Central Fleet Telematics System (Thiruvananthapuram/Kochi NOC)",
+                required_authorization="KSRTC Intelligent Transport System (ITS) Data Sharing Agreement",
+                auth_method="SHA-256 API Key Header (X-Provider-API-Key)",
+                data_format="JSON over HTTPS POST (Batch array of GPS records)",
+                expected_update_frequency_sec=5,
+                required_fields=["bus_number", "latitude", "longitude", "speed_kmh", "heading_deg", "timestamp", "sequence_number"],
+                validation_rules=[
+                    "Greater Kochi Bounding Box [9.80-10.35 N, 76.15-76.55 E]",
+                    "Speed sanity [0.0 - 120.0 km/h]",
+                    "Monotonic sequence check",
+                    "Clock skew rejection (<5m future, <15m stale)",
+                    "Impossible velocity filter (>120 km/h)"
+                ],
+                failure_handling="HTTP 429 backoff; 3 automatic retries; fallback to scheduled corridor headway",
+                rate_limit_per_minute=120,
+                data_retention_days=90
             ),
             TransitAdapterSpec(
                 adapter_id="KMRL_FEEDER_AVL_ADAPTER",
@@ -936,7 +1024,22 @@ class IngestionService:
                         "sequence_number": 1,
                         "data_origin": "LIVE DATA"
                     }]
-                }
+                },
+                expected_source="Kochi Metro Rail Limited (KMRL) Feeder Operations Center (JLN Stadium Metro)",
+                required_authorization="KMRL Multimodal Transit Integration Protocol Authorization",
+                auth_method="SHA-256 API Key Header (X-Provider-API-Key)",
+                data_format="JSON over HTTPS POST",
+                expected_update_frequency_sec=3,
+                required_fields=["bus_number", "latitude", "longitude", "speed_kmh", "heading_deg", "timestamp", "sequence_number"],
+                validation_rules=[
+                    "Greater Kochi Bounding Box [9.80-10.35 N, 76.15-76.55 E]",
+                    "Feeder corridor waypoint match",
+                    "Monotonic sequence check",
+                    "Speed sanity [0.0 - 120.0 km/h]"
+                ],
+                failure_handling="HTTP 429 backoff; cached last-known coordinates marked STALE DATA after 30s",
+                rate_limit_per_minute=120,
+                data_retention_days=60
             ),
             TransitAdapterSpec(
                 adapter_id="CCTV_HEADCOUNT_GATEWAY_ADAPTER",
@@ -958,7 +1061,22 @@ class IngestionService:
                     "camera_id": "BUS_DOOR_CAM_01",
                     "privacy_standard": "PERSON_COUNTING_ONLY_NO_BIOMETRICS",
                     "data_origin": "CV REPLAY"
-                }
+                },
+                expected_source="BusSense On-Bus Edge Camera Unit (YOLOv8 Head/Body Counter)",
+                required_authorization="Kerala Transport Department Computer Vision Privacy Compliance Certification",
+                auth_method="SHA-256 API Key Header (X-Provider-API-Key)",
+                data_format="JSON over HTTPS POST",
+                expected_update_frequency_sec=10,
+                required_fields=["bus_number", "timestamp", "raw_person_count", "stabilized_person_count", "capacity", "privacy_standard"],
+                validation_rules=[
+                    "Mandatory privacy_standard == 'PERSON_COUNTING_ONLY_NO_BIOMETRICS'",
+                    "Zero face/demographic attributes",
+                    "Capacity bounds [1 - 120 passengers]",
+                    "Confidence threshold >= 0.40"
+                ],
+                failure_handling="On camera dropout, fallback to historical corridor demand predictions (labeled PREDICTION)",
+                rate_limit_per_minute=60,
+                data_retention_days=30
             ),
             TransitAdapterSpec(
                 adapter_id="KERALA_POLICE_DISRUPTION_ADAPTER",
@@ -977,7 +1095,21 @@ class IngestionService:
                     "affected_stops": ["edappally toll & lulu terminal"],
                     "estimated_duration_mins": 25,
                     "is_active": True
-                }
+                },
+                expected_source="Kerala Police / Kochi City Traffic Police Incident Management Desk",
+                required_authorization="Kerala Police Traffic Incident Broadcasting Clearance",
+                auth_method="SHA-256 API Key Header (X-Provider-API-Key)",
+                data_format="JSON over HTTPS POST",
+                expected_update_frequency_sec=60,
+                required_fields=["route_number", "cause", "severity", "description", "affected_stops", "estimated_duration_mins"],
+                validation_rules=[
+                    "Valid corridor or route ID",
+                    "Severity enum ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']",
+                    "Duration bounds [5 - 720 mins]"
+                ],
+                failure_handling="Automatic re-poll every 60s; auto-clear upon expiration",
+                rate_limit_per_minute=30,
+                data_retention_days=180
             )
         ]
 

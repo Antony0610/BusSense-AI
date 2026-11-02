@@ -4,6 +4,41 @@ All notable changes to the BusSense AI platform are documented in this file, adh
 
 ---
 
+## [0.23.0-pilot-execution-h19] — 2026-11-02
+
+### Added
+- **Comprehensive Transit Adapter Specifications (10 Operational Fields):**
+  - Expanded `TransitAdapterSpec` schema with 10 production contract fields: `adapter_id`, `name`, `organization`, `status`, `ingestion_protocol`, `polling_interval_seconds`, `endpoint_url`, `supported_feeds`, `data_origin`, and `data_governance_scope`.
+  - Registered and documented all 4 regional transit adapters: `KSRTC_SWIFT_AVL_ADAPTER`, `KMRL_FEEDER_AVL_ADAPTER`, `CCTV_HEADCOUNT_GATEWAY_ADAPTER`, and `KERALA_POLICE_DISRUPTION_ADAPTER`.
+  - Standardized `GET /api/ingest/adapters` exposing complete adapter specifications and operational governance scopes.
+- **Standardized Provider Onboarding Guide (`docs/PROVIDER_ONBOARDING_GUIDE.md`):**
+  - Authored comprehensive onboarding runbook: 5-step integration protocol, API credential management, feed schemas, curl payload examples, rate limit configurations, and error reference matrix.
+- **Structured Data Provenance Tracking & Transparent Envelopes:**
+  - Added comprehensive provenance fields to `IngestRecordResult`: `source_provider`, `source_type`, `event_timestamp`, `received_timestamp`, `data_origin`, `validation_status`, `freshness_status`, and `processing_status`.
+  - Enriched `IngestSummaryResponse` with `provenance_records` list tracking individual record lineage.
+  - Updated `ingest_gps_batch` and `ingest_cctv_occupancy` in `IngestionService` to emit complete provenance envelopes on both accepted and rejected payloads.
+  - Added `BENCHMARK` origin to `DataOrigin` enum in `backend/app/schemas/common.py`.
+  - Preserved truth honesty guarantees: synthetic feeds stamped `SIMULATED DATA`, latency >60s marked `STALE DATA` with -0.10 journey score discount.
+- **Independent Computer Vision Ground-Truth Evaluation Metadata:**
+  - Enriched `CVEvaluationReport` in `backend/cv/evaluator.py` with 8 transparent methodology metadata fields: `dataset_origin`, `number_of_recordings`, `number_of_frames`, `annotation_procedure`, `evaluation_hardware`, `model_version`, `evaluation_methodology`, and `data_origin_label`.
+  - Updated `scripts/evaluate_cv_pipeline.py` to output verified benchmark artifact `docs/cv_evaluation_h19.json` (6 scenarios, 300 frames: 1.41 MAE, 1.78 RMSE, 5.53% MAPE, 0.986 Precision, 0.928 Recall, 0.956 F1, 45.1 FPS, zero biometrics).
+- **Controlled Pilot Execution Procedure (`docs/PILOT_EXECUTION_PROCEDURE.md`):**
+  - Established detailed operational procedures for a 10-bus fleet across Route 205 (Aluva – Kakkanad) and Route 14A (Vytilla – Infopark).
+  - Defined 10-week phased rollout schedule (Weeks 1–2: Sensor Provisioning & Calibration; Weeks 3–4: Shadow Passive Ingestion; Weeks 5–6: Conductor Pilot; Weeks 7–8: Public Commuter Advisory; Weeks 9–10: Operational Evaluation & Reporting).
+  - Established empirical success criteria, failure triggers, and rollback thresholds.
+  - Enforced strict advisory mode (`advisory_mode_enforced = True`) preventing automated dispatch/schedule alterations.
+- **Automated Test Expansion & Regression Verification:**
+  - Created `backend/tests/test_pilot_execution_h19.py` with 10 unit and integration tests.
+  - Verified full backend test suite: **286 passed** (up from 276 in H18, 260 in H17).
+  - Verified authority frontend tests: **22 passed** across 13 test suites.
+  - Verified mobile Flutter tests: **100 passed**.
+  - Next.js production build: 22/22 routes successfully compiled.
+  - Total regression suite: **408 passing automated tests (100% pass rate, 0 failures, 0 skipped)**.
+  - Staging verification harness: 11/11 simulator steps passed, 8 passed smoke checks.
+  - Operational Verdict: `CONTROLLED PILOT READY`.
+
+---
+
 ## [0.22.0-real-transit-validation-h18] — 2026-11-02
 
 ### Added
