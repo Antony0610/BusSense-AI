@@ -219,15 +219,18 @@ class TicketService:
         # 2. Database-backed transaction fallback (active when service role key is absent or in local testing)
         rows = await supabase_client.get("tickets", {"qr_code_hash": f"eq.{qr_hash}"})
         if not rows:
-            return TicketValidationResponse(
-                result="INVALID",
-                is_valid=False,
-                message="Unrecognized or invalid QR ticket. No matching boarding record found.",
-                validated_at=now.isoformat(),
-                data_origin=DataOrigin.LIVE
-            )
-
-        ticket = rows[0]
+            cached_ticket = next((t for t in self._cache.values() if t.get("qr_code_hash") == qr_hash), None)
+            if not cached_ticket:
+                return TicketValidationResponse(
+                    result="INVALID",
+                    is_valid=False,
+                    message="Unrecognized or invalid QR ticket. No matching boarding record found.",
+                    validated_at=now.isoformat(),
+                    data_origin=DataOrigin.LIVE
+                )
+            ticket = cached_ticket
+        else:
+            ticket = rows[0]
         ticket_id = ticket["id"]
         ticket_number = ticket.get("ticket_number", "BS-TICKET")
         current_status = ticket.get("status", "VALID")
@@ -278,6 +281,9 @@ class TicketService:
             )
 
         # Transition status atomically to USED
+        ticket["status"] = "USED"
+        if ticket_number in self._cache:
+            self._cache[ticket_number]["status"] = "USED"
         await supabase_client.patch("tickets", "id", ticket_id, {"status": "USED"})
         await supabase_client.post("ticket_validations", {
             "ticket_id": ticket_id,

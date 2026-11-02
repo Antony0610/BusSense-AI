@@ -16,6 +16,8 @@ class DataOrigin(str, Enum):
     CV_REPLAY = "CV REPLAY"
     ESTIMATE = "ESTIMATE"
     SYNTHETIC = "SYNTHETIC DATA"
+    STALE = "STALE DATA"
+    UNAVAILABLE = "UNAVAILABLE"
 
 class CrowdLevel(str, Enum):
     LOW = "LOW"

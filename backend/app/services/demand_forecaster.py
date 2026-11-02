@@ -24,6 +24,10 @@ from app.schemas.prediction import (
     CurrentObservationDetail,
     EvaluationMetricSummary,
     DetailedBusForecastResponse,
+    HorizonEvaluationDetail,
+    PeakOffPeakEvaluation,
+    CorridorEvaluationDetail,
+    PilotForecastingEvaluationResponse,
 )
 from app.schemas.common import CrowdLevel, DataOrigin
 from app.services.cv_occupancy import cv_occupancy_service
@@ -62,6 +66,10 @@ class DemandForecasterService:
         X_train, X_test = X[:split], X[split:]
         current_occ_test = X_test[:, 5] # Column 5 is current_occupancy
 
+        self._X_test = X_test
+        self._y_test = y
+        self._total_dataset_size = len(X)
+
         for horizon in [15, 30, 60]:
             y_train = y[horizon][:split]
             y_test = y[horizon][split:]
@@ -93,6 +101,161 @@ class DemandForecasterService:
                 "baseline_rmse": round(baseline_rmse, 2),
                 "mae_improvement_pct": improvement,
             }
+
+    def evaluate_peak_vs_offpeak(self) -> PeakOffPeakEvaluation:
+        """
+        Evaluates forecaster vs persistence baseline across peak commute hours
+        (08:00-10:30, 17:00-19:30 IST) vs off-peak hours.
+        """
+        X_test = self._X_test
+        hour = X_test[:, 0]
+        # Peak definition: 08:00-10:30 (8.0-10.5) and 17:00-19:30 (17.0-19.5)
+        peak_mask = ((hour >= 8.0) & (hour <= 10.5)) | ((hour >= 17.0) & (hour <= 19.5))
+        offpeak_mask = ~peak_mask
+
+        peak_metrics: Dict[int, HorizonEvaluationDetail] = {}
+        offpeak_metrics: Dict[int, HorizonEvaluationDetail] = {}
+
+        current_occ_test = X_test[:, 5]
+
+        for horizon in [15, 30, 60]:
+            y_test = self._y_test[horizon][int(self._total_dataset_size * 0.8):]
+            model = self.models[horizon]
+
+            # Peak evaluation
+            if np.sum(peak_mask) > 0:
+                p_X = X_test[peak_mask]
+                p_y = y_test[peak_mask]
+                p_curr = current_occ_test[peak_mask]
+                p_preds = np.clip(model.predict(p_X), 0.0, 100.0)
+
+                m_mae = float(np.mean(np.abs(p_preds - p_y)))
+                m_rmse = float(math.sqrt(np.mean((p_preds - p_y) ** 2)))
+                b_mae = float(np.mean(np.abs(p_curr - p_y)))
+                b_rmse = float(math.sqrt(np.mean((p_curr - p_y) ** 2)))
+                imp = round(((b_mae - m_mae) / max(0.001, b_mae)) * 100.0, 1)
+
+                peak_metrics[horizon] = HorizonEvaluationDetail(
+                    horizon_minutes=horizon,
+                    model_mae=round(m_mae, 2),
+                    model_rmse=round(m_rmse, 2),
+                    baseline_mae=round(b_mae, 2),
+                    baseline_rmse=round(b_rmse, 2),
+                    mae_improvement_pct=imp
+                )
+
+            # Off-peak evaluation
+            if np.sum(offpeak_mask) > 0:
+                op_X = X_test[offpeak_mask]
+                op_y = y_test[offpeak_mask]
+                op_curr = current_occ_test[offpeak_mask]
+                op_preds = np.clip(model.predict(op_X), 0.0, 100.0)
+
+                m_mae = float(np.mean(np.abs(op_preds - op_y)))
+                m_rmse = float(math.sqrt(np.mean((op_preds - op_y) ** 2)))
+                b_mae = float(np.mean(np.abs(op_curr - op_y)))
+                b_rmse = float(math.sqrt(np.mean((op_curr - op_y) ** 2)))
+                imp = round(((b_mae - m_mae) / max(0.001, b_mae)) * 100.0, 1)
+
+                offpeak_metrics[horizon] = HorizonEvaluationDetail(
+                    horizon_minutes=horizon,
+                    model_mae=round(m_mae, 2),
+                    model_rmse=round(m_rmse, 2),
+                    baseline_mae=round(b_mae, 2),
+                    baseline_rmse=round(b_rmse, 2),
+                    mae_improvement_pct=imp
+                )
+
+        return PeakOffPeakEvaluation(
+            peak_hours_definition="08:00-10:30, 17:00-19:30 IST",
+            peak_sample_count=int(np.sum(peak_mask)),
+            offpeak_sample_count=int(np.sum(offpeak_mask)),
+            peak_metrics=peak_metrics,
+            offpeak_metrics=offpeak_metrics
+        )
+
+    def evaluate_corridor_metrics(self) -> List[CorridorEvaluationDetail]:
+        """
+        Evaluates forecasting performance per Greater Kochi transit corridor against persistence baseline.
+        """
+        X_test = self._X_test
+        current_occ_test = X_test[:, 5]
+        densities = X_test[:, 9]
+
+        results: List[CorridorEvaluationDetail] = []
+
+        corridors = [
+            ("205", "Aluva Metro ➔ Vyttila Mobility Hub via Kaloor", 0.42),
+            ("14A", "Fort Kochi ➔ Infopark Phase 1 via Kaloor", 0.65),
+            ("12", "Kaloor ➔ Infopark Express", 0.50),
+        ]
+
+        for key, name, base_dens in corridors:
+            mask = np.isclose(densities, base_dens, atol=0.03)
+            c_count = int(np.sum(mask))
+            if c_count == 0:
+                continue
+
+            c_X = X_test[mask]
+            c_curr = current_occ_test[mask]
+            horizons: Dict[int, HorizonEvaluationDetail] = {}
+
+            for horizon in [15, 30, 60]:
+                y_test = self._y_test[horizon][int(self._total_dataset_size * 0.8):][mask]
+                model = self.models[horizon]
+                preds = np.clip(model.predict(c_X), 0.0, 100.0)
+
+                m_mae = float(np.mean(np.abs(preds - y_test)))
+                m_rmse = float(math.sqrt(np.mean((preds - y_test) ** 2)))
+                b_mae = float(np.mean(np.abs(c_curr - y_test)))
+                b_rmse = float(math.sqrt(np.mean((c_curr - y_test) ** 2)))
+                imp = round(((b_mae - m_mae) / max(0.001, b_mae)) * 100.0, 1)
+
+                horizons[horizon] = HorizonEvaluationDetail(
+                    horizon_minutes=horizon,
+                    model_mae=round(m_mae, 2),
+                    model_rmse=round(m_rmse, 2),
+                    baseline_mae=round(b_mae, 2),
+                    baseline_rmse=round(b_rmse, 2),
+                    mae_improvement_pct=imp
+                )
+
+            results.append(CorridorEvaluationDetail(
+                corridor_key=key,
+                corridor_name=name,
+                sample_count=c_count,
+                horizons=horizons
+            ))
+
+        return results
+
+    def get_pilot_forecasting_evaluation(self) -> PilotForecastingEvaluationResponse:
+        """
+        Returns full empirical evaluation package for the pilot evaluation framework.
+        """
+        overall = [
+            HorizonEvaluationDetail(
+                horizon_minutes=h,
+                baseline_mae=self.evaluation_metrics[h]["baseline_mae"],
+                model_mae=self.evaluation_metrics[h]["model_mae"],
+                baseline_rmse=self.evaluation_metrics[h]["baseline_rmse"],
+                model_rmse=self.evaluation_metrics[h]["model_rmse"],
+                mae_improvement_pct=self.evaluation_metrics[h]["mae_improvement_pct"]
+            )
+            for h in [15, 30, 60]
+            if h in self.evaluation_metrics
+        ]
+
+        return PilotForecastingEvaluationResponse(
+            model_version=self.MODEL_VERSION,
+            training_data_quality=self.TRAINING_DATA_QUALITY,
+            total_samples=self._total_dataset_size,
+            train_split_pct=80.0,
+            test_split_pct=20.0,
+            overall_metrics=overall,
+            peak_vs_offpeak=self.evaluate_peak_vs_offpeak(),
+            corridor_evaluations=self.evaluate_corridor_metrics()
+        )
 
     def _get_bus_state(self, bus_number: str) -> Dict[str, Any]:
         """

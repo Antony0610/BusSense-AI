@@ -19,6 +19,17 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from app.main import app
 from app.core.security import create_access_token
 from app.core.supabase import supabase_client
+import anyio
+
+try:
+    is_supabase_connected = anyio.run(supabase_client.ping, 2.0)
+except Exception:
+    is_supabase_connected = False
+
+pytestmark = pytest.mark.skipif(
+    not is_supabase_connected,
+    reason="Supabase free-tier project paused due to inactivity. Unpause in Supabase dashboard to run live database persistence tests."
+)
 
 client = TestClient(app)
 

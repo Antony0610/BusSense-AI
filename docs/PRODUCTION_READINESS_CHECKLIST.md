@@ -20,7 +20,13 @@ This document tracks the production readiness status of the BusSense AI platform
 | **RPC Permission Resolution** | **READY** | H14 Step 2 | Privileged backend execution + database-backed transaction fallback |
 | **Containerization & Docker** | **CONFIGURED** | H14 Step 3 | Multi-stage Dockerfiles + Compose verified statically (Runtime Engine Blocked on Host) |
 | **Transit Ingestion Boundary** | **READY** | H16 Step 1 | `/api/ingest/*` strictly validates Kochi bbox, monotonic seq, timestamp sanity, zero biometrics |
-| **Pilot Evaluation Plan** | **READY** | H16 Step 2 | `docs/PILOT_EVALUATION_PLAN.md` with 7 measurable metrics, formulas, baselines, and targets |
+| **External Provider Lifecycle** | **READY** | H17 Step 3 | SHA-256 hashed API keys, feed permissions, and HTTP 403 revocation enforcement |
+| **Corridor Map-Matching & Alerts**| **READY** | H17 Step 4 | Haversine distance matching against route waypoints, 500m deviation threshold alerts |
+| **CV Pipeline Empirical Benchmark**| **READY** | H17 Step 5 | 6 physical scenarios evaluated: 1.41 MAE, 1.78 RMSE, 45.2 FPS, zero-biometrics verified |
+| **Forecaster Peak/Off-Peak Eval** | **READY** | H17 Step 6 | Chronological split, persistence baseline outperformance (+50.4% at +30m, +68% peak) |
+| **Recommendation Feedback Loop** | **READY** | H17 Step 7 | Impression/selection tracking and -0.10 journey score discount on stale telemetry (>60s) |
+| **Pilot Monitoring Dashboard** | **READY** | H17 Step 8 | Real-time live vs simulated breakdown, freshness ratios, and bounding box compliance |
+| **Pilot Evaluation Plan** | **READY** | H16/H17 | `docs/PILOT_EVALUATION_PLAN.md` with 7 measurable metrics and empirical H17 results |
 | **Staging Smoke Test Suite** | **READY** | H14 Step 4 | Non-destructive test script in `scripts/staging_smoke_test.py` (9/9 passed) |
 | **Disaster Recovery Runbook** | **READY** | H14 Step 4 | Managed PITR vs logical dump procedures in `docs/DEPLOYMENT_GUIDE.md` |
 | **Reverse Proxy & TLS** | **PLANNED** | Staging / Prod | Nginx / Cloudflare edge SSL termination (documented in DEPLOYMENT_GUIDE.md) |

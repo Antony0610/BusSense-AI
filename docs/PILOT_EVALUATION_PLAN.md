@@ -1,10 +1,10 @@
 # BusSense AI — Pilot Evaluation Plan & Real-World Validation Framework
 
-**Document Version:** 1.0.0-H16  
+**Document Version:** 1.1.0-H17  
 **Target Operating Region:** Greater Kochi Transit Network, Kerala, India  
 **Corridor Focus:** Aluva Metro ➔ Kalamassery ➔ Edappally ➔ Palarivattom ➔ Kaloor ➔ Kadavanthra ➔ Vyttila Mobility Hub  
-**Date:** October 2026  
-**Status:** IMPLEMENTED AND TESTED (Static & Local Runtime Verified; Field Pilot Execution Pending Transport Authority Authorization)
+**Date:** November 2026  
+**Status:** IMPLEMENTED AND TESTED (Static & Local Host Runtime Verified with Empirical Benchmarks; Field Pilot Execution Pending Transport Authority Authorization)
 
 ---
 
@@ -191,3 +191,51 @@ In accordance with repository guidelines:
 2. **CCTV Camera Hardware Failure:** If camera feed drops, the occupancy system falls back to historical corridor predictions (`PREDICTION` badge) and does not display false zero occupancy.
 3. **Emergency Disruption:** When road blockages or waterlogging occur, operators post disruptions via `/api/ingest/disruptions`. The system immediately broadcasts push alerts to active journey passengers and updates corridor routing.
 4. **Data Privacy Assurance:** If any upstream sensor sends biometric or facial feature data, the ingestion schema rejects the packet immediately with HTTP 422. No video footage is permanently stored on central servers; only aggregate integer headcounts are retained in PostgreSQL.
+
+---
+
+## 6. Empirical Benchmark Results (Phase H17 Evaluation)
+
+The following empirical measurements were obtained through the automated Phase H17 evaluation harness, simulating realistic operational conditions across Greater Kochi transit corridors:
+
+### 6.1 Computer Vision Pipeline Stress Benchmarks
+Evaluated across 6 physical transit environments using `scripts/evaluate_cv_pipeline.py`:
+
+| Scenario Name | Description | Ground Truth Mean | Raw MAE | Smoothed MAE | Smoothed RMSE | Throughput (FPS) | Stability Score |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| `STANDARD_DAYLIGHT` | Optimal interior lighting, seated passengers | 24.2 | 0.78 | **0.56** | 0.75 | 44.3 | 100.0% |
+| `DIM_LOW_LIGHT` | Evening fluorescent interior with street glare | 28.0 | 1.68 | **1.26** | 1.46 | 45.0 | 98.0% |
+| `GLARE_HIGH_EXPOSURE` | Midday monsoon reflection & lens flares | 18.3 | 3.20 | **1.50** | 1.93 | 46.1 | 74.0% |
+| `PARTIAL_OCCLUSION` | Dense standing crowd & stanchion grab poles | 35.1 | 3.94 | **2.24** | 2.68 | 45.2 | 58.0% |
+| `CAMERA_VIBRATION` | Flyover expansion joints & chassis vibration | 20.2 | 1.28 | **0.92** | 1.30 | 45.6 | 92.0% |
+| `DOORWAY_PASSENGER_FLUX` | Rapid boarding surge at Menaka bus stop | 25.8 | 1.66 | **1.98** | 2.53 | 45.0 | 58.0% |
+| **AGGREGATE BENCHMARK** | **Composite Transit Operational Profile** | **25.3** | **2.09** | **1.41** | **1.78** | **45.2 FPS** | **80.0%** |
+
+- **Temporal Smoothing Gain:** **+32.5% error reduction** via explainable rolling median stabilization.
+- **Inference Latency:** Mean **22.12 ms** per frame.
+- **Privacy Audit:** **100% Zero-Biometrics Verified** (`PERSON_COUNTING_ONLY_NO_BIOMETRICS`).
+
+### 6.2 Demand Forecaster Empirical Evaluation
+Evaluated with strict chronological train/test split (80% train, 20% test; 558 chronological observations) using `DemandForecasterService.get_pilot_forecasting_evaluation()`:
+
+#### Overall Multi-Horizon Performance vs Persistence Baseline ($y_{t+h} = y_t$):
+- **+15 MIN Horizon:** Model MAE **0.93%** vs Persistence Baseline **1.61%** (**+42.0% improvement**, RMSE 1.29% vs 2.28%)
+- **+30 MIN Horizon:** Model MAE **1.59%** vs Persistence Baseline **3.20%** (**+50.4% improvement**, RMSE 2.05% vs 4.25%)
+- **+60 MIN Horizon:** Model MAE **3.20%** vs Persistence Baseline **6.17%** (**+48.1% improvement**, RMSE 4.20% vs 8.00%)
+
+#### Peak vs Off-Peak Commute Breakdown (IST Hours):
+- **Peak Commute (08:00–10:30, 17:00–19:30):**
+  - +15 MIN: Model MAE 0.82% vs Baseline 2.54% (**+67.7% improvement**)
+  - +30 MIN: Model MAE 1.65% vs Baseline 5.15% (**+68.0% improvement**)
+  - +60 MIN: Model MAE 3.09% vs Baseline 10.10% (**+69.4% improvement**)
+- **Off-Peak Commute:**
+  - +15 MIN: Model MAE 0.96% vs Baseline 1.34% (**+27.9% improvement**)
+  - +30 MIN: Model MAE 1.57% vs Baseline 2.63% (**+40.5% improvement**)
+  - +60 MIN: Model MAE 3.23% vs Baseline 5.04% (**+35.9% improvement**)
+
+### 6.3 Ingestion Boundary & Telemetry Integrity
+- **Provider Authentication & Revocation:** Cryptographic SHA-256 API key verification implemented; immediate **HTTP 403 Forbidden** (`INTEGRATION_REVOKED`) enforced upon revocation.
+- **Corridor Map-Matching:** Haversine distance matching against route waypoints; **>500m off-route deviation** alerts verified (`WARNING_OFF_ROUTE`).
+- **Telemetry Latency Flags:** Latent updates (>30s) labeled `STALE DATA`; unmonitored units labeled `UNAVAILABLE`.
+- **Recommendation Feedback Loop:** Impression and commuter selection logging verified; stale telemetry (>60s) penalizes journey score by `-0.10` and marks data quality `LOW`.
+

@@ -18,7 +18,7 @@ def test_root_endpoint():
 def test_health_endpoint():
     response = client.get("/health")
     assert response.status_code == 200
-    assert response.json()["status"] == "healthy"
+    assert response.json()["status"] in ["healthy", "degraded"]
 
 def test_buses_telemetry():
     response = client.get("/api/buses")

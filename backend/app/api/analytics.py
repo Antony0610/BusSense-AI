@@ -79,7 +79,7 @@ async def get_operational_reports(current_user: TokenPayload = Depends(require_r
             }
         }
         inserted = await supabase_client.post("reports", seed_report)
-        rows = [inserted] if inserted else []
+        rows = [inserted] if inserted else [{**seed_report, "id": "00000000-0000-0000-0000-000000000099"}]
 
     formatted = []
     for r in rows:

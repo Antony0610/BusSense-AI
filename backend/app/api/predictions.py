@@ -13,6 +13,7 @@ from app.schemas.prediction import (
     PredictionHorizonMap,
     RoutePredictionSummary,
     DetailedBusForecastResponse,
+    PilotForecastingEvaluationResponse,
 )
 from app.services.demand_forecaster import demand_forecaster
 from app.services.gps_simulator import gps_simulator
@@ -80,6 +81,20 @@ async def list_fleet_predictions():
         data=results,
         data_origin=DataOrigin.PREDICTION,
         message="Fleet corridor crowd predictions retrieved"
+    )
+
+@router.get("/pilot-evaluation", response_model=ApiResponse[PilotForecastingEvaluationResponse])
+async def get_forecasting_pilot_evaluation():
+    """
+    Returns empirical evaluation of the Ridge regression crowd forecasting engine:
+    Overall metrics, Peak vs Off-Peak breakdown, and Corridor-specific evaluation
+    benchmarked against persistence baseline (y_{t+h} = y_t).
+    """
+    evaluation = demand_forecaster.get_pilot_forecasting_evaluation()
+    return ApiResponse(
+        data=evaluation,
+        data_origin=DataOrigin.PREDICTION,
+        message="Demand forecaster pilot evaluation metrics"
     )
 
 @router.get("/{bus_identifier}", response_model=ApiResponse[List[CrowdForecastPoint]])

@@ -2,6 +2,7 @@
 BusSense AI - Crowd Predictions & Smart Recommendations Schemas
 """
 from typing import Optional, List, Dict, Any
+from datetime import datetime, timezone
 from pydantic import BaseModel, Field
 from app.schemas.common import CrowdLevel, DataOrigin
 
@@ -107,3 +108,61 @@ class JourneyPlanResponse(BaseModel):
     factors_considered: Optional[Dict[str, bool]] = None
     data_quality: Optional[str] = "HIGH"
     data_origin: DataOrigin = DataOrigin.RECOMMENDATION
+
+class RecommendationImpressionRequest(BaseModel):
+    journey_id: str
+    recommended_bus_number: str
+    presented_alternatives_count: int
+    preference: str = "balanced"
+    timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+class RecommendationSelectionRequest(BaseModel):
+    journey_id: str
+    selected_bus_number: str
+    was_recommended_bus: bool
+    selection_reason: Optional[str] = None
+    crowd_level_at_selection: Optional[str] = None
+    timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+class RecommendationAnalyticsResponse(BaseModel):
+    total_impressions: int
+    total_selections: int
+    recommended_bus_selections: int
+    alternative_selections: int
+    compliance_rate_pct: float
+    crowd_savings_achieved_avg_pct: float
+    stale_telemetry_penalties_applied: int
+    timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+class HorizonEvaluationDetail(BaseModel):
+    horizon_minutes: int
+    model_mae: float
+    model_rmse: float
+    baseline_mae: float
+    baseline_rmse: float
+    mae_improvement_pct: float
+
+class PeakOffPeakEvaluation(BaseModel):
+    peak_hours_definition: str = "08:00-10:30, 17:00-19:30 IST"
+    peak_sample_count: int
+    offpeak_sample_count: int
+    peak_metrics: Dict[int, HorizonEvaluationDetail]
+    offpeak_metrics: Dict[int, HorizonEvaluationDetail]
+
+class CorridorEvaluationDetail(BaseModel):
+    corridor_key: str
+    corridor_name: str
+    sample_count: int
+    horizons: Dict[int, HorizonEvaluationDetail]
+
+class PilotForecastingEvaluationResponse(BaseModel):
+    model_version: str
+    training_data_quality: str
+    total_samples: int
+    train_split_pct: float
+    test_split_pct: float
+    overall_metrics: List[HorizonEvaluationDetail]
+    peak_vs_offpeak: PeakOffPeakEvaluation
+    corridor_evaluations: List[CorridorEvaluationDetail]
+    timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+

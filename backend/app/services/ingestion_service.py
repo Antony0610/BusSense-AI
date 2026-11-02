@@ -8,6 +8,9 @@ Manages real-time and batch ingestion boundary for authorized transit data:
 - Honest truth badging and health monitoring
 """
 import re
+import math
+import hashlib
+import secrets
 from datetime import datetime, timezone, timedelta
 from typing import Dict, List, Any, Optional, Tuple
 from app.schemas.common import DataOrigin, CrowdLevel
@@ -19,6 +22,11 @@ from app.schemas.ingestion import (
     DisruptionIngestRecord,
     IngestRecordResult,
     IngestSummaryResponse,
+    ExternalProviderRegisterRequest,
+    ExternalProviderResponse,
+    ProviderRevocationRequest,
+    MapMatchingResult,
+    PilotMonitoringDashboardResponse,
     KOCHI_MIN_LAT,
     KOCHI_MAX_LAT,
     KOCHI_MIN_LNG,
@@ -52,6 +60,232 @@ class IngestionService:
             "total_disruptions_ingested": 0,
             "last_ingested_at": None
         }
+
+        # Registered External Transit Providers (Phase H17)
+        self._providers: Dict[str, Dict[str, Any]] = {}
+        self._seed_pilot_providers()
+
+    def _seed_pilot_providers(self):
+        """Seeds standard Greater Kochi transit integration providers for pilot evaluation"""
+        seeds = [
+            {
+                "provider_id": "KSRTC_AVL_FEED",
+                "provider_name": "Kerala State Road Transport Corp - AVL Gateway",
+                "api_key": "bs_live_ksrtc_pilot_test_key_001",
+                "allowed_feed_types": ["AVL_GPS", "ROUTE_SCHEDULE", "DISRUPTION"],
+                "contact_email": "its@keralartc.com"
+            },
+            {
+                "provider_id": "KOCHI_METRO_FEEDER_AVL",
+                "provider_name": "KMRL Feeder Bus Telematics Provider",
+                "api_key": "bs_live_kmrl_feeder_test_key_002",
+                "allowed_feed_types": ["AVL_GPS"],
+                "contact_email": "feeder-ops@kochimetro.org"
+            },
+            {
+                "provider_id": "CCTV_DOORWAY_FEED_01",
+                "provider_name": "BusSense Edge Camera Headcount Gateway",
+                "api_key": "bs_live_cctv_edge_test_key_003",
+                "allowed_feed_types": ["CCTV_OCCUPANCY"],
+                "contact_email": "edge-cctv@bussense.kerala.gov.in"
+            }
+        ]
+        now_iso = datetime.now(timezone.utc).isoformat()
+        for s in seeds:
+            key_hash = hashlib.sha256(s["api_key"].encode()).hexdigest()
+            self._providers[s["provider_id"]] = {
+                "provider_id": s["provider_id"],
+                "provider_name": s["provider_name"],
+                "api_key_hash": key_hash,
+                "api_key_masked": f"bs_live_...{s['api_key'][-6:]}",
+                "allowed_feed_types": s["allowed_feed_types"],
+                "contact_email": s["contact_email"],
+                "is_active": True,
+                "created_at": now_iso,
+                "revoked_at": None,
+                "revocation_reason": None,
+                "ingested_records_count": 0
+            }
+
+    @staticmethod
+    def haversine_distance_meters(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+        """Calculates great-circle distance between two GPS coordinates in meters"""
+        R = 6371000.0  # Earth radius in meters
+        phi1 = math.radians(lat1)
+        phi2 = math.radians(lat2)
+        delta_phi = math.radians(lat2 - lat1)
+        delta_lambda = math.radians(lon2 - lon1)
+        a = math.sin(delta_phi / 2.0)**2 + math.cos(phi1) * math.cos(phi2) * math.sin(delta_lambda / 2.0)**2
+        c = 2.0 * math.atan2(math.sqrt(a), math.sqrt(1.0 - a))
+        return round(R * c, 1)
+
+    def map_match_vehicle(
+        self,
+        bus_number: str,
+        lat: Optional[float] = None,
+        lng: Optional[float] = None
+    ) -> MapMatchingResult:
+        """
+        Calculates corridor map matching and detects route deviations (>500m off corridor).
+        Matches against assigned route waypoints in CORRIDORS.
+        """
+        telemetry = self._bus_telemetry_state.get(bus_number)
+        fleet_bus = gps_simulator.fleet_state.get(bus_number, {})
+
+        if lat is None:
+            lat = telemetry["latitude"] if telemetry else fleet_bus.get("live_lat", fleet_bus.get("latitude", 9.9922))
+        if lng is None:
+            lng = telemetry["longitude"] if telemetry else fleet_bus.get("live_lng", fleet_bus.get("longitude", 76.2974))
+
+        corridor_key = fleet_bus.get("corridor_key", "R12_205")
+        corridor = CORRIDORS.get(corridor_key, CORRIDORS.get("R12_205", {}))
+        waypoints = corridor.get("waypoints", [])
+
+        if not waypoints:
+            return MapMatchingResult(
+                bus_number=bus_number,
+                matched_corridor=corridor_key,
+                nearest_stop="Unknown",
+                distance_to_corridor_meters=0.0,
+                is_off_route=False,
+                off_route_threshold_meters=500.0,
+                telemetry_latitude=lat,
+                telemetry_longitude=lng
+            )
+
+        min_dist = float("inf")
+        nearest_stop = waypoints[0]["stop"]
+        for wp in waypoints:
+            d = self.haversine_distance_meters(lat, lng, wp["lat"], wp["lng"])
+            if d < min_dist:
+                min_dist = d
+                nearest_stop = wp["stop"]
+
+        is_off_route = min_dist > 500.0
+
+        return MapMatchingResult(
+            bus_number=bus_number,
+            matched_corridor=corridor_key,
+            nearest_stop=nearest_stop,
+            distance_to_corridor_meters=min_dist,
+            is_off_route=is_off_route,
+            off_route_threshold_meters=500.0,
+            telemetry_latitude=lat,
+            telemetry_longitude=lng
+        )
+
+    def register_provider(self, req: ExternalProviderRegisterRequest) -> Tuple[ExternalProviderResponse, str]:
+        raw_key = f"bs_live_{secrets.token_hex(20)}"
+        key_hash = hashlib.sha256(raw_key.encode()).hexdigest()
+        masked = f"bs_live_...{raw_key[-6:]}"
+        now_iso = datetime.now(timezone.utc).isoformat()
+
+        self._providers[req.provider_id] = {
+            "provider_id": req.provider_id,
+            "provider_name": req.provider_name,
+            "api_key_hash": key_hash,
+            "api_key_masked": masked,
+            "allowed_feed_types": req.allowed_feed_types,
+            "contact_email": req.contact_email,
+            "is_active": True,
+            "created_at": now_iso,
+            "revoked_at": None,
+            "revocation_reason": None,
+            "ingested_records_count": 0
+        }
+
+        resp = ExternalProviderResponse(
+            provider_id=req.provider_id,
+            provider_name=req.provider_name,
+            api_key=raw_key,
+            api_key_masked=masked,
+            allowed_feed_types=req.allowed_feed_types,
+            is_active=True,
+            created_at=now_iso,
+            ingested_records_count=0
+        )
+        return resp, raw_key
+
+    def verify_provider_api_key(
+        self,
+        api_key: str,
+        feed_type: Optional[str] = None
+    ) -> Tuple[bool, Optional[str], Optional[dict]]:
+        """
+        Verifies external provider API key.
+        Checks:
+        1. Valid registered key
+        2. Active integration (not revoked)
+        3. Authorized for feed_type
+        """
+        key_hash = hashlib.sha256(api_key.encode()).hexdigest()
+        for provider in self._providers.values():
+            if provider["api_key_hash"] == key_hash:
+                if not provider["is_active"]:
+                    reason = provider.get("revocation_reason") or "Provider integration has been revoked by authority"
+                    return False, f"INTEGRATION_REVOKED: {reason}", provider
+                if feed_type and feed_type not in provider["allowed_feed_types"]:
+                    return False, f"UNAUTHORIZED_FEED_TYPE: Provider not permitted to ingest {feed_type}", provider
+                provider["ingested_records_count"] += 1
+                return True, None, provider
+        return False, "INVALID_PROVIDER_KEY", None
+
+    def list_providers(self) -> List[ExternalProviderResponse]:
+        results = []
+        for p in self._providers.values():
+            results.append(ExternalProviderResponse(
+                provider_id=p["provider_id"],
+                provider_name=p["provider_name"],
+                api_key=None,
+                api_key_masked=p["api_key_masked"],
+                allowed_feed_types=p["allowed_feed_types"],
+                is_active=p["is_active"],
+                created_at=p["created_at"],
+                revoked_at=p["revoked_at"],
+                revocation_reason=p["revocation_reason"],
+                ingested_records_count=p["ingested_records_count"]
+            ))
+        return results
+
+    def revoke_provider(self, provider_id: str, reason: str) -> Optional[ExternalProviderResponse]:
+        if provider_id not in self._providers:
+            return None
+        p = self._providers[provider_id]
+        p["is_active"] = False
+        p["revoked_at"] = datetime.now(timezone.utc).isoformat()
+        p["revocation_reason"] = reason
+        return ExternalProviderResponse(
+            provider_id=p["provider_id"],
+            provider_name=p["provider_name"],
+            api_key=None,
+            api_key_masked=p["api_key_masked"],
+            allowed_feed_types=p["allowed_feed_types"],
+            is_active=False,
+            created_at=p["created_at"],
+            revoked_at=p["revoked_at"],
+            revocation_reason=p["revocation_reason"],
+            ingested_records_count=p["ingested_records_count"]
+        )
+
+    def reactivate_provider(self, provider_id: str) -> Optional[ExternalProviderResponse]:
+        if provider_id not in self._providers:
+            return None
+        p = self._providers[provider_id]
+        p["is_active"] = True
+        p["revoked_at"] = None
+        p["revocation_reason"] = None
+        return ExternalProviderResponse(
+            provider_id=p["provider_id"],
+            provider_name=p["provider_name"],
+            api_key=None,
+            api_key_masked=p["api_key_masked"],
+            allowed_feed_types=p["allowed_feed_types"],
+            is_active=True,
+            created_at=p["created_at"],
+            revoked_at=None,
+            revocation_reason=None,
+            ingested_records_count=p["ingested_records_count"]
+        )
 
     def _parse_timestamp(self, ts_str: str) -> Optional[datetime]:
         """Safely parses ISO 8601 string into timezone-aware UTC datetime"""
@@ -138,6 +372,9 @@ class IngestionService:
                     ))
                     continue
 
+            # Corridor map matching & off-route detection
+            map_match = self.map_match_vehicle(rec.bus_number, rec.latitude, rec.longitude)
+
             # 3. Update in-memory telemetry state
             self._bus_telemetry_state[rec.bus_number] = {
                 "last_timestamp": ts,
@@ -147,7 +384,11 @@ class IngestionService:
                 "longitude": rec.longitude,
                 "speed_kmh": rec.speed_kmh,
                 "heading_deg": rec.heading_deg,
-                "data_origin": rec.data_origin
+                "data_origin": rec.data_origin,
+                "is_off_route": map_match.is_off_route,
+                "deviation_meters": map_match.distance_to_corridor_meters,
+                "matched_corridor": map_match.matched_corridor,
+                "nearest_stop": map_match.nearest_stop
             }
 
             # 4. Integrate into active fleet simulation engine if bus is tracked
@@ -159,12 +400,15 @@ class IngestionService:
                 # Provide direct GPS override for dynamic live tracking
                 fleet_bus["live_lat"] = rec.latitude
                 fleet_bus["live_lng"] = rec.longitude
+                fleet_bus["is_off_route"] = map_match.is_off_route
+                fleet_bus["deviation_meters"] = map_match.distance_to_corridor_meters
 
             accepted += 1
+            warn_reason = f"WARNING_OFF_ROUTE: {map_match.distance_to_corridor_meters}m off route {map_match.matched_corridor}" if map_match.is_off_route else None
             results.append(IngestRecordResult(
                 identifier=record_id,
                 status="ACCEPTED",
-                reason=None
+                reason=warn_reason
             ))
 
         self.stats["total_gps_accepted"] += accepted
@@ -418,5 +662,98 @@ class IngestionService:
             },
             "timestamp": now.isoformat()
         }
+
+    def get_pilot_monitoring_summary(self) -> PilotMonitoringDashboardResponse:
+        """
+        Aggregates comprehensive operational monitoring telemetry for the Phase H17 field pilot.
+        Provides live vs simulated breakdowns, freshness metrics, occupancy tiers,
+        data origin auditing, and provider integration statuses.
+        """
+        now = datetime.now(timezone.utc)
+        fleet_buses = gps_simulator.fleet_state
+        total_fleet = len(fleet_buses)
+
+        connected = len(self._bus_telemetry_state)
+        fresh_count = 0
+        stale_count = 0
+        unavailable_count = 0
+
+        for bus_num, bus_state in fleet_buses.items():
+            telemetry = self._bus_telemetry_state.get(bus_num)
+            if not telemetry:
+                unavailable_count += 1
+            else:
+                age_sec = (now - telemetry["last_timestamp"]).total_seconds()
+                if age_sec <= 30.0:
+                    fresh_count += 1
+                elif age_sec <= 120.0:
+                    stale_count += 1
+                else:
+                    unavailable_count += 1
+
+        freshness_ratio = round((fresh_count / max(total_fleet, 1)) * 100.0, 1)
+
+        # Live vs simulated breakdown
+        live_sim_counts = {
+            "LIVE_DATA": 0,
+            "SIMULATED_DATA": 0,
+            "CV_REPLAY": 0,
+            "ESTIMATE": 0
+        }
+        for b in fleet_buses.values():
+            origin = b.get("data_origin", "SIMULATED DATA")
+            if isinstance(origin, DataOrigin):
+                origin = origin.value
+            if "LIVE" in str(origin):
+                live_sim_counts["LIVE_DATA"] += 1
+            elif "REPLAY" in str(origin):
+                live_sim_counts["CV_REPLAY"] += 1
+            elif "ESTIMATE" in str(origin):
+                live_sim_counts["ESTIMATE"] += 1
+            else:
+                live_sim_counts["SIMULATED_DATA"] += 1
+
+        # Occupancy distribution
+        tier_counts = {"LOW": 0, "MODERATE": 0, "HIGH": 0, "FULL": 0}
+        for b in fleet_buses.values():
+            crowd = b.get("crowd_level", "LOW")
+            tier_counts[crowd] = tier_counts.get(crowd, 0) + 1
+
+        active_providers = sum(1 for p in self._providers.values() if p["is_active"])
+        revoked_providers = sum(1 for p in self._providers.values() if not p["is_active"])
+
+        origins = {
+            "AVL_GPS": DataOrigin.LIVE.value if any(p["is_active"] for p in self._providers.values() if "AVL_GPS" in p["allowed_feed_types"]) else DataOrigin.SIMULATED.value,
+            "CCTV_PASSENGER_COUNT": DataOrigin.CV_REPLAY.value,
+            "DEMAND_FORECASTING": DataOrigin.PREDICTION.value,
+            "TRANSIT_RECOMMENDATIONS": DataOrigin.RECOMMENDATION.value,
+            "MISSING_TELEMETRY": DataOrigin.UNAVAILABLE.value,
+            "LATENT_TELEMETRY": DataOrigin.STALE.value
+        }
+
+        return PilotMonitoringDashboardResponse(
+            total_active_vehicles=total_fleet,
+            connected_vehicles_count=connected,
+            fresh_telemetry_count=fresh_count,
+            stale_telemetry_count=stale_count,
+            unavailable_telemetry_count=unavailable_count,
+            freshness_ratio_pct=freshness_ratio,
+            live_vs_simulated_breakdown=live_sim_counts,
+            occupancy_tier_distribution=tier_counts,
+            prediction_status="OPERATIONAL_RIDGE_REGRESSION",
+            ingestion_stats=self.stats,
+            cv_processing_status="REPLAY_AND_LIVE_STREAM_ACTIVE",
+            active_providers_count=active_providers,
+            revoked_providers_count=revoked_providers,
+            data_origins=origins,
+            privacy_standard="PERSON_COUNTING_ONLY_NO_BIOMETRICS",
+            greater_kochi_bbox={
+                "min_lat": KOCHI_MIN_LAT,
+                "max_lat": KOCHI_MAX_LAT,
+                "min_lng": KOCHI_MIN_LNG,
+                "max_lng": KOCHI_MAX_LNG
+            },
+            timestamp=now.isoformat()
+        )
 
 ingestion_service = IngestionService()

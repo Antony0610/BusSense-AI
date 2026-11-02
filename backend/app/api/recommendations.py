@@ -6,7 +6,13 @@ ETA, live crowding, H9 demand predictions, journey duration, and fare.
 from fastapi import APIRouter, Query, HTTPException, status
 from typing import Optional, Dict, Any, List
 from app.schemas.common import ApiResponse, DataOrigin
-from app.schemas.prediction import JourneyPlanResponse, JourneyPlanRequest
+from app.schemas.prediction import (
+    JourneyPlanResponse,
+    JourneyPlanRequest,
+    RecommendationImpressionRequest,
+    RecommendationSelectionRequest,
+    RecommendationAnalyticsResponse
+)
 from app.services.recommendation_engine import recommendation_engine, PREFERENCE_WEIGHTS
 from app.core.supabase import supabase_client
 
@@ -127,4 +133,43 @@ async def get_supported_preferences():
         data=modes,
         data_origin=DataOrigin.RECOMMENDATION,
         message="Supported recommendation preferences"
+    )
+
+@router.post("/impression", response_model=ApiResponse[RecommendationAnalyticsResponse])
+async def record_recommendation_impression(req: RecommendationImpressionRequest):
+    """
+    Logs an impression event when a journey recommendation is served to a commuter.
+    Audits recommendation presentation for Phase H17 field evaluation.
+    """
+    analytics = recommendation_engine.record_impression(req)
+    return ApiResponse(
+        data=analytics,
+        data_origin=DataOrigin.RECOMMENDATION,
+        message="Recommendation impression recorded"
+    )
+
+@router.post("/selection", response_model=ApiResponse[RecommendationAnalyticsResponse])
+async def record_recommendation_selection(req: RecommendationSelectionRequest):
+    """
+    Logs commuter adoption/selection choice (recommended bus vs alternative option).
+    Calculates compliance rate and verifies real-world modal adherence.
+    """
+    analytics = recommendation_engine.record_selection(req)
+    return ApiResponse(
+        data=analytics,
+        data_origin=DataOrigin.RECOMMENDATION,
+        message=f"Commuter selection recorded: was_recommended={req.was_recommended_bus}"
+    )
+
+@router.get("/analytics", response_model=ApiResponse[RecommendationAnalyticsResponse])
+async def get_recommendation_analytics():
+    """
+    Returns aggregate recommendation field analytics:
+    total impressions, selection compliance rate, and crowd savings achieved.
+    """
+    analytics = recommendation_engine.get_analytics_summary()
+    return ApiResponse(
+        data=analytics,
+        data_origin=DataOrigin.RECOMMENDATION,
+        message="Recommendation pilot evaluation analytics"
     )

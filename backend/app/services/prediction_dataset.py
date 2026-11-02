@@ -175,10 +175,7 @@ class FeatureEngineer:
         for obs in observations:
             by_bus.setdefault(obs["bus_number"], []).append(obs)
 
-        X_rows = []
-        y_15 = []
-        y_30 = []
-        y_60 = []
+        samples = []
 
         for bus_key, bus_obs in by_bus.items():
             bus_obs.sort(key=lambda r: r["recorded_at"])
@@ -204,15 +201,21 @@ class FeatureEngineer:
                     corridor_base_density=base_dens
                 )
 
-                X_rows.append(feat)
-                y_15.append(fut_15["occupancy_pct"])
-                y_30.append(fut_30["occupancy_pct"])
-                y_60.append(fut_60["occupancy_pct"])
+                samples.append({
+                    "recorded_at": curr["recorded_at"],
+                    "feat": feat,
+                    "y_15": fut_15["occupancy_pct"],
+                    "y_30": fut_30["occupancy_pct"],
+                    "y_60": fut_60["occupancy_pct"]
+                })
 
-        X = np.array(X_rows, dtype=np.float32)
+        # Strict chronological ordering across the entire transit network (zero future data leakage)
+        samples.sort(key=lambda s: s["recorded_at"])
+
+        X = np.array([s["feat"] for s in samples], dtype=np.float32)
         y = {
-            15: np.array(y_15, dtype=np.float32),
-            30: np.array(y_30, dtype=np.float32),
-            60: np.array(y_60, dtype=np.float32),
+            15: np.array([s["y_15"] for s in samples], dtype=np.float32),
+            30: np.array([s["y_30"] for s in samples], dtype=np.float32),
+            60: np.array([s["y_60"] for s in samples], dtype=np.float32),
         }
         return X, y

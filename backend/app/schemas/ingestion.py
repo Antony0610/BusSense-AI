@@ -139,3 +139,59 @@ class IngestSummaryResponse(BaseModel):
     freshness_status: str # "FRESH", "STALE", "HISTORICAL"
     data_origin: DataOrigin
     processed_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+# =========================================================================
+# Phase H17: External Provider Integration, Map-Matching & Pilot Monitoring
+# =========================================================================
+
+class ExternalProviderRegisterRequest(BaseModel):
+    provider_id: str = Field(..., min_length=3, max_length=64, description="Unique provider ID, e.g. 'KSRTC_AVL_GATEWAY'")
+    provider_name: str = Field(..., min_length=3, max_length=128, description="Descriptive organization or system name")
+    allowed_feed_types: List[str] = Field(default_factory=lambda: ["AVL_GPS"], description="Allowed feeds: AVL_GPS, CCTV_OCCUPANCY, ROUTE_SCHEDULE, DISRUPTION")
+    contact_email: str = Field(..., description="Technical point of contact email")
+
+class ExternalProviderResponse(BaseModel):
+    provider_id: str
+    provider_name: str
+    api_key: Optional[str] = None # Only returned upon registration
+    api_key_masked: str
+    allowed_feed_types: List[str]
+    is_active: bool
+    created_at: str
+    revoked_at: Optional[str] = None
+    revocation_reason: Optional[str] = None
+    ingested_records_count: int = 0
+
+class ProviderRevocationRequest(BaseModel):
+    reason: str = Field(..., min_length=5, max_length=256, description="Audit reason for revoking provider integration")
+
+class MapMatchingResult(BaseModel):
+    bus_number: str
+    matched_corridor: Optional[str] = None
+    nearest_stop: Optional[str] = None
+    distance_to_corridor_meters: float
+    is_off_route: bool
+    off_route_threshold_meters: float = 500.0
+    telemetry_latitude: float
+    telemetry_longitude: float
+    evaluated_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+class PilotMonitoringDashboardResponse(BaseModel):
+    total_active_vehicles: int
+    connected_vehicles_count: int
+    fresh_telemetry_count: int
+    stale_telemetry_count: int
+    unavailable_telemetry_count: int
+    freshness_ratio_pct: float
+    live_vs_simulated_breakdown: dict
+    occupancy_tier_distribution: dict
+    prediction_status: str
+    ingestion_stats: dict
+    cv_processing_status: str
+    active_providers_count: int
+    revoked_providers_count: int
+    data_origins: dict
+    privacy_standard: str
+    greater_kochi_bbox: dict
+    timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
