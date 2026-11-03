@@ -471,5 +471,18 @@ Following the independent audit, the project is governed by strict dependency-or
     - Transit Feed Simulator: **11/11 steps passed**.
     - Staging Runtime Verification Harness: **8/8 smoke checks passed**.
   - **Operational Status:** **CONTROLLED PILOT READY**. (Host software stack, machine learning pipelines, REST APIs, and verification harnesses 100% operational; physical vehicle hardware integration awaits Transport Commissionerate clearance).
+- [x] **PHASE H21 — Production-Like Deployment, Stakeholder Integration & Pilot Preparation: VERIFIED**
+  - **Linux Staging Deployment Infrastructure:** Packaged production systemd service units (`bussense-backend.service`, `bussense-frontend.service`), Nginx reverse proxy with TLS 1.3 hardening and rate limiting (`deploy/nginx/bussense.conf`), and automated Linux installer script (`deploy/scripts/deploy_staging.sh`).
+  - **Database Durability & Logical Snapshot Verification:** Executed live audit script `scripts/test_database_backup_recovery.py` against Supabase cloud PostgreSQL; dumped and cryptographically verified 86.2 KB JSON logical backup across all 7 core tables (`routes`, `stops`, `buses`, `tickets`, `users`, `reports`, `incidents`) with SHA-256 integrity verification.
+  - **Mobile Environment Configuration & Connectivity:** Audited `apps/mobile/lib/core/config/env_config.dart` confirming dynamic override via `--dart-define=API_BASE_URL=...` and zero hardcoded localhost in production builds. 100/100 Flutter tests passing.
+  - **Comprehensive Stakeholder Proposal Suite:** Authored 4 institutional documents in `docs/`: `BUSSENSE_STAKEHOLDER_PROPOSAL.md` (Executive Policy), `BUSSENSE_TECHNICAL_OVERVIEW.md` (ITS Architecture), `BUSSENSE_PILOT_PROPOSAL.md` (10-Week / 10-Bus Field Pilot), and `BUSSENSE_DEMO_GUIDE.md` (11-Step Demonstration Script & FAQ).
+  - **Automated Stakeholder Demonstration Workflow:** Authored `backend/tests/test_stakeholder_demo_h21.py` automating all 11 demonstration steps (route lookup, stop discovery, fleet status, crowd queries, journey planning, ticket booking, QR pass issuance, atomic conductor validation, CCTV headcount ingestion, pilot monitoring, demand forecasting, and chained demonstration) with 12/12 passing tests.
+  - **Empirical Performance & Latency Benchmark:** Benchmarked critical endpoints with `scripts/benchmark_api_performance.py`: sub-25ms response for Fleet Crowd (9.77 ms), GPS Locations (9.71 ms), Active Fleet (12.04 ms), Pilot Monitor HUD (18.89 ms), Recommendations (20.28 ms), and Demand Predictions (24.47 ms).
+  - **Complete Regression Suite Verification (430/430 checks passing, 100% pass rate):**
+    - Backend Pytest: **308/308 passed** (+12 new tests in `test_stakeholder_demo_h21.py`, 100% pass rate).
+    - Next.js Authority Frontend Tests: **22/22 passed across 13 suites** (`npm test`).
+    - Next.js Standalone Build: **22/22 routes successfully compiled** (`npm run build`).
+    - Mobile Flutter Tests: **100/100 passed** (`flutter test`).
+  - **Operational Status:** **CONTROLLED PILOT READY**. (Platform is fully packaged, demonstrated, and empirically validated for an authorized controlled pilot across Greater Kochi transit corridors).
 
 

@@ -1,0 +1,35 @@
+[Unit]
+Description=BusSense AI - FastAPI ASGI Backend Service
+After=network.target
+
+[Service]
+Type=simple
+User=bussense
+Group=bussense
+WorkingDirectory=/opt/bussense/backend
+Environment="PATH=/opt/bussense/backend/.venv/bin:/usr/local/bin:/usr/bin:/bin"
+EnvironmentFile=/opt/bussense/backend/.env
+ExecStart=/opt/bussense/backend/.venv/bin/uvicorn app.main:app \
+    --host 127.0.0.1 \
+    --port 8000 \
+    --workers 4 \
+    --proxy-headers \
+    --forwarded-allow-ips='*' \
+    --log-config /opt/bussense/backend/logging.conf
+Restart=always
+RestartSec=5s
+LimitNOFILE=65535
+TimeoutStopSec=30
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=bussense-backend
+
+# Security Sandboxing for Systemd
+ProtectSystem=full
+ProtectHome=true
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
+

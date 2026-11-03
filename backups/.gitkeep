@@ -1,0 +1,2 @@
+# Keep backups directory in repository tracking while excluding actual JSON database dumps
+

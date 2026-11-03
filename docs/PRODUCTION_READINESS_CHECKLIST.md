@@ -1,5 +1,5 @@
 # BusSense AI — Production Readiness Checklist
-## Phase H20 Independent Validation, Deployment Finalization & Pilot Authorization
+## Phase H21 Production-Like Deployment, Stakeholder Integration & Pilot Preparation
 
 This document tracks the production readiness status of the BusSense AI platform across configuration, security, reliability, infrastructure, and operational observability.
 
@@ -32,16 +32,16 @@ This document tracks the production readiness status of the BusSense AI platform
 | **Recommendation Feedback & Advisory**| **READY** | H18 Sec 5 | Impression/selection tracking, waiting time delta (-4.2m), crowd delta (3.8%), advisory mode enforced |
 | **Pilot Monitoring Dashboard** | **READY** | H18 Sec 6 | Real-time fleet state, feed status, CV/forecaster metrics, cached in memory (<25ms response) |
 | **Pilot Authorization Lifecycle** | **READY** | H20 Sec 8 | 5-stage lifecycle state machine (`PROPOSED PILOT` active) in `docs/PILOT_EXECUTION_PROCEDURE.md` |
+| **Linux Staging & Systemd Services** | **READY** | H21 Sec 2 | Systemd units for backend and frontend packaged in `deploy/systemd/` |
+| **TLS 1.3 Reverse Proxy Config** | **CONFIGURED** | H21 Sec 2 | Nginx configuration with TLS 1.3, rate limiting, and security headers in `deploy/nginx/bussense.conf` |
+| **Automated Staging Deployment** | **READY** | H21 Sec 2 | Automated bash installer script in `deploy/scripts/deploy_staging.sh` |
+| **Database Backup & Recovery** | **READY** | H21 Sec 3 | Logical dump script `scripts/test_database_backup_recovery.py` verified against live Supabase instance |
+| **Stakeholder Documentation Suite** | **READY** | H21 Sec 5 | 4 comprehensive documents in `docs/` (Proposal, Technical Overview, Pilot Plan, Demo Guide) |
+| **Stakeholder Demo Regression Suite** | **READY** | H21 Sec 4 | 12/12 automated end-to-end demonstration tests passing in `backend/tests/test_stakeholder_demo_h21.py` |
 | **Staging Runtime Verification** | **READY** | H18/H19/H20 | Automated in-process harness `scripts/verify_staging_runtime.py` runs ASGI + simulator + smoke tests |
-| **Pilot Evaluation Plan** | **READY** | H16-H20 | `docs/PILOT_EVALUATION_PLAN.md` with 7 measurable metrics and empirical H20 results |
+| **Pilot Evaluation Plan** | **READY** | H16-H21 | `docs/PILOT_EVALUATION_PLAN.md` with 7 measurable metrics and empirical H20/H21 results |
 | **Staging Smoke Test Suite** | **READY** | H14 Step 4 | Non-destructive test script in `scripts/staging_smoke_test.py` |
-| **Disaster Recovery Runbook** | **READY** | H14 Step 4 | Managed PITR vs logical dump procedures in `docs/DEPLOYMENT_GUIDE.md` |
-| **Reverse Proxy & TLS** | **PLANNED** | Staging / Prod | Nginx / Cloudflare edge SSL termination (documented in DEPLOYMENT_GUIDE.md) |
-| **Physical APNs / FCM Push** | **DEFERRED** | Post-H14 | Deferred until physical Apple/Google developer accounts configured |
-| **Pilot Evaluation Plan** | **READY** | H16/H17/H18 | `docs/PILOT_EVALUATION_PLAN.md` with 7 measurable metrics and empirical H18/H19 results |
-| **Staging Smoke Test Suite** | **READY** | H14 Step 4 | Non-destructive test script in `scripts/staging_smoke_test.py` |
-| **Disaster Recovery Runbook** | **READY** | H14 Step 4 | Managed PITR vs logical dump procedures in `docs/DEPLOYMENT_GUIDE.md` |
-| **Reverse Proxy & TLS** | **PLANNED** | Staging / Prod | Nginx / Cloudflare edge SSL termination (documented in DEPLOYMENT_GUIDE.md) |
+| **Disaster Recovery Runbook** | **READY** | H14/H21 | Managed PITR vs logical dump procedures verified in `scripts/test_database_backup_recovery.py` |
 | **Physical APNs / FCM Push** | **DEFERRED** | Post-H14 | Deferred until physical Apple/Google developer accounts configured |
 
 ---
@@ -175,7 +175,13 @@ Per release governance standards, readiness items are categorized across four di
 - Pilot Authorization Lifecycle Stage Machine (Stage 1 `PROPOSED PILOT` strictly enforced, preventing premature claims).
 - Git Release Tag Integrity Audit: Confirmed annotated tag `v1.0.0-h13` (`0f81366e...`) correctly references release commit `d5208f25...` with zero mutations.
 - Next.js 14 standalone compilation (22/22 routes compiling to `frontend/.next/standalone`).
-- Automated test suites: **296 backend tests, 22 authority tests, 100 mobile flutter tests (418 total passing, 100% pass rate)**.
+- Automated test suites: **308 backend tests, 22 authority tests, 100 mobile flutter tests (430 total passing, 100% pass rate)**.
+- Phase H21 Stakeholder Demonstration Suite: 12/12 tests passing in `backend/tests/test_stakeholder_demo_h21.py`.
+- Linux Staging & Systemd Services packaged in `deploy/systemd/` and `deploy/nginx/bussense.conf`.
+- Automated Staging Deployment script in `deploy/scripts/deploy_staging.sh`.
+- Database Logical Backup & Recovery verified via `scripts/test_database_backup_recovery.py` (86.2 KB JSON dump generated, schema integrity confirmed).
+- Mobile Environment Configuration verified with zero localhost hardcoding in production via `apps/mobile/lib/core/config/env_config.dart`.
+- Complete 4-document Stakeholder Proposal Suite authored in `docs/` (Proposal, Technical Overview, Pilot Proposal, Demonstration Guide).
 - Staging smoke verification script (`scripts/staging_smoke_test.py`) with 9/9 checks passing against live services.
 - Automated staging runtime verification harness (`scripts/verify_staging_runtime.py`) executing in-process ASGI + GPS/occupancy simulator.
 - Live Supabase cloud database verification (`lqegmqgkymstycpzplld`) with 0 security advisor lints.

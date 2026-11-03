@@ -363,4 +363,3 @@ async def test_conductor_ticket_validation_logic():
     )
     assert res.result == "INVALID"
     assert res.is_valid is False
-

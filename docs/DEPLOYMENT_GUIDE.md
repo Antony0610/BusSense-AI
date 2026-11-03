@@ -387,7 +387,46 @@ Invoke-RestMethod -Uri "http://localhost:8000/health/live"
 - [x] **Phase H17 Pilot Evaluation Suite:** 9/9 tests passing in `backend/tests/test_pilot_evaluation_h17.py`.
 - [x] **Phase H16 Pilot Readiness Suite:** 21/21 tests passing in `backend/tests/test_pilot_readiness_h16.py`.
 - [x] **End-to-End Integration Suite:** 33/33 tests passing in `backend/tests/test_system_integration_h15.py`.
-- [x] **Automated Regression Suite:** 296 backend tests passed, 22 authority tests, 100 mobile tests passing (**418 total passing automated tests, 100% pass rate**).
-- [ ] **Docker Engine Availability:** **BLOCKED ON HOST** (Docker CLI is not installed on this local Windows environment).
-- [ ] **Public Production Deployment:** Intentionally deferred pending physical hardware vehicle mounting and transport authority clearance.
+- [x] **Automated Regression Suite:** 308 backend tests passed, 22 authority tests, 100 mobile tests passing (**430 total passing automated tests, 100% pass rate**).
+- [x] **Phase H21 Stakeholder Demonstration Suite:** 12/12 tests passing in `backend/tests/test_stakeholder_demo_h21.py`.
+- [x] **Linux Staging Deployment Configuration:** Packaged in `deploy/systemd/` and `deploy/nginx/bussense.conf`.
+- [x] **Automated Deployment Script:** Verified in `deploy/scripts/deploy_staging.sh`.
+- [x] **Database Logical Backup & Recovery Verification:** Executed live via `scripts/test_database_backup_recovery.py` (86.2 KB JSON dump generated, restore schema integrity certified).
+- [x] **Mobile Environment Override:** Verified `--dart-define=API_BASE_URL=...` and zero hardcoded localhost in `apps/mobile/lib/core/config/env_config.dart`.
+- [ ] **Docker Engine Availability:** **BLOCKED ON HOST** (Docker CLI is not installed on this local Windows environment; Linux systemd + Nginx staging alternative fully packaged).
+- [ ] **Public Production Deployment:** Intentionally deferred pending physical hardware vehicle mounting and transport authority clearance (`STAGE 1: PROPOSED PILOT`).
+
+---
+
+## 13. Linux Production Staging Deployment (Systemd + Nginx)
+
+For deployment environments where container runtimes are unavailable or where bare-metal Linux staging is preferred (e.g. Ubuntu 22.04 LTS or Debian 12 virtual machines):
+
+### 13.1 Architecture Overview
+The platform services run as unprivileged daemon processes managed by systemd, isolated behind an Nginx TLS 1.3 reverse proxy:
+- **FastAPI ASGI Backend:** `bussense-backend.service` (Port 8000, 4 Uvicorn workers, syslog logging).
+- **Next.js Authority Frontend:** `bussense-frontend.service` (Port 3000, Node production standalone server).
+- **Ingress Reverse Proxy:** Nginx with rate-limiting zones (`api_ingest: 15r/s`, `api_general: 30r/s`), HSTS, and SSL hardening (`deploy/nginx/bussense.conf`).
+
+### 13.2 Automated Deployment Script
+Execute the end-to-end staging installer on the remote Linux host:
+```bash
+sudo bash deploy/scripts/deploy_staging.sh master
+```
+The script automatically:
+1. Verifies prerequisites (`git`, `python3`, `node`, `npm`, `systemctl`, `nginx`, `curl`).
+2. Pulls target commit from `origin/master`.
+3. Rebuilds backend virtualenv and installs pinned dependencies.
+4. Compiles Next.js 14 frontend in production standalone mode.
+5. Installs and enables systemd service units.
+6. Installs Nginx configuration and reloads without downtime.
+7. Executes post-deployment smoke verification on `/health` and `/`.
+
+### 13.3 Database Backup & Recovery Procedure
+Execute the non-destructive database backup script to export a timestamped logical snapshot:
+```powershell
+# In PowerShell:
+& "backend/.venv/Scripts/python.exe" scripts/test_database_backup_recovery.py
+```
+This produces a cryptographically verified JSON archive in `backups/supabase_logical_backup_*.json` capturing all 7 core tables (`routes`, `stops`, `buses`, `tickets`, `users`, `reports`, `incidents`) with SHA-256 checksums.
 

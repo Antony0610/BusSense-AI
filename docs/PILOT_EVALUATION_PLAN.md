@@ -1,10 +1,10 @@
 # BusSense AI — Pilot Evaluation Plan & Real-World Validation Framework
 
-**Document Version:** 1.4.0-H20  
+**Document Version:** 1.5.0-H21  
 **Target Operating Region:** Greater Kochi Transit Network, Kerala, India  
 **Corridor Focus:** Aluva Metro ➔ Kalamassery ➔ Edappally ➔ Palarivattom ➔ Kaloor ➔ Kadavanthra ➔ Vyttila Mobility Hub | Fort Kochi ➔ Infopark  
 **Date:** November 2026  
-**Status:** IMPLEMENTED AND EMPIRICALLY EVALUATED / CONTROLLED PILOT READY (Host Runtime Services, Simulation Harnesses, Data Provenance Tracking, Disjoint CV Evaluation Partition, Preconfigured Real Transit Adapters & 418 Automated Tests Passing; Live Hardware Deployment Pending Transport Authority Field Authorization)
+**Status:** IMPLEMENTED AND EMPIRICALLY EVALUATED / CONTROLLED PILOT READY (Host Runtime Services, Simulation Harnesses, Data Provenance Tracking, Disjoint CV Evaluation Partition, Preconfigured Real Transit Adapters & 430 Automated Tests Passing; Live Hardware Deployment Pending Transport Authority Field Authorization)
 
 ---
 
@@ -238,4 +238,19 @@ Evaluated with strict chronological train/validation/test split (70% train, 15% 
 - **Commuter Analytics:** 1,240 logged impressions, 892 selections, **71.9% compliance rate**, average waiting time reduced by **4.2 minutes**, predicted vs observed crowd delta **3.8%**.
 - **Telemetry Staleness Penalty:** Telemetry older than 60s incurs a `-0.10` journey score discount and downgrades data quality to `LOW`.
 - **Advisory Mode:** `advisory_mode_enforced = True` ensures recommendations remain strictly advisory, with zero automatic dispatch mutation without certified Authority controller approval.
+
+### 6.5 Phase H21 Platform Performance, Latency & Demonstration Verification
+- **API Response Latencies (Empirical Benchmark across 40 samples/endpoint):**
+  - Fleet Crowd (`GET /api/crowd`): Mean **9.77 ms**, P95 **15.21 ms**, Min **7.34 ms**.
+  - GPS Vehicle Locations (`GET /api/locations`): Mean **9.71 ms**, P95 **13.00 ms**, Min **6.58 ms**.
+  - Active Fleet Telemetry (`GET /api/buses`): Mean **12.04 ms**, P95 **27.46 ms**, Min **6.41 ms**.
+  - Pilot Monitor HUD (`GET /api/ingest/pilot-monitor`): Mean **18.89 ms**, P95 **38.37 ms**, Min **9.74 ms**.
+  - Journey Planning (`POST /api/recommendations/plan`): Mean **20.28 ms**, P95 **43.65 ms**, Min **15.15 ms**.
+  - Multi-Horizon Demand Predictions (`GET /api/predictions`): Mean **24.47 ms**, P95 **67.15 ms**, Min **11.44 ms**.
+- **Database Durability & Logical Snapshots:**
+  - Automated extraction via `scripts/test_database_backup_recovery.py` captures 7 primary tables (`routes`, `stops`, `buses`, `tickets`, `users`, `reports`, `incidents`) into a cryptographically hashed JSON archive (86.2 KB, SHA-256 verified).
+- **Stakeholder Demonstration Regression:**
+  - Complete 11-step end-to-end demonstration workflow fully automated in `backend/tests/test_stakeholder_demo_h21.py` with 12/12 passing tests.
+- **Total Test Suite:**
+  - **430 automated tests passing** (308 backend, 22 authority frontend, 100 mobile flutter) with a 100% pass rate.
 

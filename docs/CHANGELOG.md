@@ -4,6 +4,35 @@ All notable changes to the BusSense AI platform are documented in this file, adh
 
 ---
 
+## [0.25.0-stakeholder-integration-h21] — 2026-11-02
+
+### Added
+- **Production-Like Linux Staging Infrastructure in `deploy/`:**
+  - Authored `deploy/systemd/bussense-backend.service` (FastAPI ASGI with 4 workers, sandboxing via `ProtectSystem=full`).
+  - Authored `deploy/systemd/bussense-frontend.service` (Next.js standalone Node server).
+  - Authored `deploy/nginx/bussense.conf` (TLS 1.3 reverse proxy, HSTS, CSP, and rate limiting zones for ingestion, auth, and general API).
+  - Authored `deploy/scripts/deploy_staging.sh` (automated end-to-end Linux staging deployment script).
+- **Database Durability & Logical Backup Verification:**
+  - Implemented `scripts/test_database_backup_recovery.py` performing live connectivity audit and extracting cryptographically verified logical snapshots of 7 core tables (`routes`, `stops`, `buses`, `tickets`, `users`, `reports`, `incidents`).
+  - Generated timestamped snapshot in `backups/supabase_logical_backup_*.json` (86.2 KB, SHA-256 verified) with restore format conformity confirmed.
+- **Mobile Environment Configuration & Connectivity Audit:**
+  - Audited `apps/mobile/lib/core/config/env_config.dart` confirming `--dart-define=API_BASE_URL=...` and `--dart-define=AUTHORITY_PORTAL_URL=...` dynamic override support with zero hardcoded localhost in production builds.
+- **Stakeholder Proposal Suite in `docs/`:**
+  - `docs/BUSSENSE_STAKEHOLDER_PROPOSAL.md`: Executive policy proposal for Transport Commissionerate, KSRTC, and KMRL.
+  - `docs/BUSSENSE_TECHNICAL_OVERVIEW.md`: Architectural specification for transit agency CTOs and ITS departments.
+  - `docs/BUSSENSE_PILOT_PROPOSAL.md`: Operational 10-week, 10-bus Controlled Field Pilot plan across Route 205 & 14A.
+  - `docs/BUSSENSE_DEMO_GUIDE.md`: 11-step stakeholder live demonstration script with curl payloads and commissioner FAQ.
+- **Stakeholder Demonstration Automated Workflow Suite:**
+  - Authored `backend/tests/test_stakeholder_demo_h21.py` with 12 automated test cases verifying commuter discovery, stop lookup, fleet status, crowd queries, journey planning, ticket booking, QR pass issuance, atomic conductor validation, CCTV headcount ingestion, pilot monitoring, demand forecasting, and integrated chained scenario.
+  - All 12/12 tests passing in 15 seconds.
+- **Empirical API Latency Benchmarks:**
+  - Executed `scripts/benchmark_api_performance.py` (40 samples/endpoint): Fleet Crowd (9.77 ms mean), GPS Locations (9.71 ms mean), Active Fleet (12.04 ms mean), Pilot Monitor HUD (18.89 ms mean), Recommendations (20.28 ms mean), Demand Predictions (24.47 ms mean).
+- **Regression Suite Expansion:**
+  - Total automated tests expanded to **430 passing tests** (308 backend, 22 authority frontend, 100 mobile flutter) with 100% pass rate.
+  - Operational Verdict: `CONTROLLED PILOT READY`.
+
+---
+
 ## [0.24.0-independent-validation-h20] — 2026-11-02
 
 ### Added

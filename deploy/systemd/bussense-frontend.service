@@ -1,0 +1,31 @@
+[Unit]
+Description=BusSense AI - Authority Dashboard Next.js Service
+After=network.target bussense-backend.service
+
+[Service]
+Type=simple
+User=bussense
+Group=bussense
+WorkingDirectory=/opt/bussense/frontend
+Environment="NODE_ENV=production"
+Environment="PORT=3000"
+Environment="HOSTNAME=127.0.0.1"
+EnvironmentFile=/opt/bussense/frontend/.env.local
+ExecStart=/usr/bin/npm start -- -p 3000
+Restart=always
+RestartSec=5s
+LimitNOFILE=65535
+TimeoutStopSec=30
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=bussense-frontend
+
+# Security Sandboxing for Systemd
+ProtectSystem=full
+ProtectHome=true
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
+
