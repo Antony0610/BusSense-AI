@@ -4,6 +4,35 @@ All notable changes to the BusSense AI platform are documented in this file, adh
 
 ---
 
+## [1.1.0-supabase-migration-h22] — 2026-11-03
+
+### Added
+- **Supabase-Native Backend Architecture:**
+  - Migrated backend responsibilities into Supabase PostgreSQL, Supabase PostgREST, Row-Level Security, and Supabase Edge Functions.
+  - Authored Migration 007 (`supabase/migrations/20261103000000_h22_supabase_backend.sql` and `backend/migrations/007_supabase_backend_migration.sql`): `providers`, `ingestion_logs`, `pilot_authorizations`, `book_ticket_atomic`, `get_nearby_stops`, and storage bucket definitions.
+  - Authored unified Supabase Edge Function API Router (`supabase/functions/api/index.ts`) and dedicated standalone functions (`recommendations`, `demand-forecast`, `ingest-telemetry`, `validate-ticket`, `ai-assistant`).
+  - Implemented in-Edge TypeScript Ridge Demand Forecasting inference and explainable multi-factor journey scoring.
+- **Endpoint Migration Inventory (`docs/ENDPOINT_MIGRATION_INVENTORY.md`):**
+  - Cataloged all 62 REST API endpoints across 21 domain routers with database dependencies, auth roles, and RLS policies.
+- **Vercel Deployment Architecture (`frontend/`):**
+  - Removed localhost dependencies in `frontend/lib/api.ts` and `frontend/lib/realtime.ts`, wiring direct to Supabase Edge Functions and Supabase Realtime WebSockets.
+  - Created `vercel.json` (root and frontend) and `frontend/.env.example`.
+  - Authored complete `docs/VERCEL_DEPLOYMENT_GUIDE.md` (10-step configuration runbook).
+  - Verified `next build` compiles 22/22 routes cleanly.
+- **Flutter Android Production Release (`apps/mobile/`):**
+  - Updated `EnvConfig` and `ApiClient` to incorporate Supabase production URLs and public anon key with zero localhost fallbacks.
+  - Executed `flutter build apk --release` successfully generating a 53.4 MB release APK.
+  - Authored complete `docs/FLUTTER_RELEASE_GUIDE.md` covering keystores, permissions, and device verification.
+- **Security, Testing & Governance Documentation:**
+  - Authored `docs/SECURITY_AUDIT_REPORT.md` (0 vulnerabilities, 100% RLS compliance, zero biometrics).
+  - Authored `docs/TESTING_REPORT.md` (430/430 tests passing, 100% pass rate).
+  - Authored `docs/KNOWN_LIMITATIONS.md` (honest runtime boundary disclosures).
+  - Authored `docs/SUPABASE_DEPLOYMENT_GUIDE.md` and `docs/PHASE_H22_REPORT.md`.
+- **Operational Status:**
+  - Certified **`CONTROLLED PILOT READY`** under release tag `v1.1.0-h22`.
+
+---
+
 ## [0.25.0-stakeholder-integration-h21] — 2026-11-02
 
 ### Added

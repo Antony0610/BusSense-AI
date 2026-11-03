@@ -1,13 +1,21 @@
 /**
  * BusSense AI - Client SDK & API Service
- * Connects to FastAPI Backend at http://localhost:8000/api
+ * Connects to Supabase Edge Functions & PostgREST Backend
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+const SUPABASE_DEFAULT_URL = "https://lqegmqgkymstycpzplld.supabase.co";
+const SUPABASE_DEFAULT_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxxZWdtcWdreW1zdHljcHpwbGxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA0MTg4MTksImV4cCI6MjEwNTk5NDgxOX0.7GxTajcD4CyhlyTca39zziut7DntTQuBsYebZz2hVu0";
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 
+  (process.env.NEXT_PUBLIC_SUPABASE_URL ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/api` : `${SUPABASE_DEFAULT_URL}/functions/v1/api`);
+
+const ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || SUPABASE_DEFAULT_ANON_KEY;
 
 export async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const url = `${API_BASE}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`;
-  const authHeader: Record<string, string> = {};
+  const authHeader: Record<string, string> = {
+    "apikey": ANON_KEY,
+  };
   if (typeof window !== "undefined") {
     const token = localStorage.getItem("bussense_token");
     if (token) {

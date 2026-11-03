@@ -49,10 +49,13 @@ export function calculateDataFreshness(
 
 export type ConnectionStatus = "CONNECTED" | "RECONNECTING" | "POLLING" | "OFFLINE";
 
+const SUPABASE_DEFAULT_URL = "https://lqegmqgkymstycpzplld.supabase.co";
+const SUPABASE_DEFAULT_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxxZWdtcWdreW1zdHljcHpwbGxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA0MTg4MTksImV4cCI6MjEwNTk5NDgxOX0.7GxTajcD4CyhlyTca39zziut7DntTQuBsYebZz2hVu0";
+
 export function createRealtimeStream(
   onEvent: (event: RealtimeEvent) => void,
   onStatusChange?: (status: ConnectionStatus) => void,
-  wsUrl: string = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8000/ws/telemetry"
+  wsUrl: string = process.env.NEXT_PUBLIC_WS_URL || `wss://lqegmqgkymstycpzplld.supabase.co/realtime/v1/websocket?apikey=${SUPABASE_DEFAULT_ANON_KEY}&vsn=1.0.0`
 ): () => void {
   if (typeof window === "undefined") {
     return () => {};
@@ -67,7 +70,8 @@ export function createRealtimeStream(
     if (onStatusChange) onStatusChange(status);
   };
 
-  const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+  const apiBase = process.env.NEXT_PUBLIC_API_URL || 
+    (process.env.NEXT_PUBLIC_SUPABASE_URL ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/api` : `${SUPABASE_DEFAULT_URL}/functions/v1/api`);
 
   const startPolling = () => {
     if (isClosed || pollingInterval) return;

@@ -1,6 +1,7 @@
 # BusSense AI — System Architecture
+## Supabase-Native Cloud & Edge Infrastructure (Phase H22)
 
-This document describes the high-level and detailed architecture of the BusSense AI platform, including data pipelines, hardware-to-cloud interfaces, and machine learning components.
+This document describes the high-level and detailed architecture of the BusSense AI platform, including data pipelines, Supabase-native services, Vercel frontend hosting, Flutter mobile release builds, and machine learning boundaries.
 
 ---
 
@@ -11,35 +12,35 @@ This document describes the high-level and detailed architecture of the BusSense
 │                                CLIENT WORKSPACES                                  │
 ├─────────────────────────┬─────────────────────────┬───────────────────────────────┤
 │     PASSENGER APP       │   DRIVER COCKPIT HUD    │   AUTHORITY COMMAND CENTER    │
-│  (Next.js Mobile Shell  │  (Next.js Mobile Shell  │    (Next.js Desktop Web App   │
-│    / Target: Flutter)   │   / Target: Flutter)    │      Tailwind + Leaflet)      │
+│ (Flutter Android Build  │ (Flutter Android Build  │  (Next.js 14 Web App Deployed │
+│    apps/mobile/ APK)    │    apps/mobile/ APK)    │      on Vercel Edge Network)  │
 └────────────┬────────────┴────────────┬────────────┴───────────────┬───────────────┘
              │                         │                            │
              │ HTTPS / WSS             │ HTTPS / WSS                │ HTTPS / WSS
              ▼                         ▼                            ▼
 ┌───────────────────────────────────────────────────────────────────────────────────┐
-│                             FASTAPI BACKEND GATEWAY                               │
-│                         (Python 3.14 ASGI Core in /backend)                       │
+│                    SUPABASE-NATIVE BACKEND ARCHITECTURE                           │
+│                (Project: lqegmqgkymstycpzplld, Region: ap-south-1)                │
 ├───────────────────────────────────────────────────────────────────────────────────┤
-│  • Security & RBAC: JWT Verification (PASSENGER, DRIVER_CONDUCTOR, AUTHORITY)     │
-│  • Telemetry WebSocket Broadcast (/ws/telemetry)                                  │
-│  • Background Simulation Ticker (2.0s loop updating corridor positions)           │
-├─────────────────┬─────────────────┬──────────────────┬────────────────────────────┤
-│  CV OCCUPANCY   │ GPS SIMULATOR   │ DEMAND FORECAST  │   RECOMMENDATION ENGINE    │
-│  (YOLOv8/OpenCV)│ (Waypoint Nav)  │  (scikit-learn)  │   (Multi-factor scoring)   │
-├─────────────────┴─────────────────┴──────────────────┴────────────────────────────┤
-│                 TICKET ENGINE & RAG TRANSIT ASSISTANT SERVICE                     │
-└──────────────────────────────────────┬────────────────────────────────────────────┘
-                                       │
-                                       │ PostgREST / Supabase Client
-                                       ▼
-┌───────────────────────────────────────────────────────────────────────────────────┐
-│                       SUPABASE POSTGRESQL DATABASE & AUTH                         │
-│                    (Project: lqegmqgkymstycpzplld, ap-south-1)                    │
+│  • Supabase Auth: JWT Verification (PASSENGER, DRIVER_CONDUCTOR, AUTHORITY)       │
+│  • Supabase Edge Functions (/functions/v1/api/* in Deno / TypeScript):            │
+│      - Unified API Gateway Router                                                 │
+│      - Multi-Factor Explainable Journey Recommendations (TypeScript)              │
+│      - Multi-Horizon Ridge Demand Forecasting (TypeScript In-Edge Inference)       │
+│      - Transit Telemetry Boundary Ingestion (/ingest/gps, /ingest/cctv)           │
+│      - Pilot Monitoring HUD & Provider Lifecycle Management                       │
+│      - Grounded RAG Transit Assistant (/ai/chat)                                  │
+│  • Supabase Realtime: Postgres CDC & Broadcast WebSockets (/realtime/v1)          │
+│  • Supabase Storage: Secure Buckets (bussense-reports, bussense-incidents)        │
 ├───────────────────────────────────────────────────────────────────────────────────┤
-│  • 26 Relational Tables with Row-Level Security (RLS)                             │
-│  • Vector Knowledge Chunks for Retrieval-Augmented Generation (RAG)               │
-│  • Live Telemetry Persistence: gps_positions, occupancy_readings, tickets         │
+│                     POSTGRESQL 15+ RELATIONAL & RPC LAYER                         │
+├───────────────────────────────────────────────────────────────────────────────────┤
+│  • PostgREST Direct Access with Row-Level Security (RLS) on all exposed tables    │
+│  • Atomic Stored Functions (SECURITY DEFINER):                                    │
+│      - validate_ticket_atomic(p_qr_hash, p_conductor_id, p_bus_id)                │
+│      - book_ticket_atomic(...)                                                    │
+│      - get_nearby_stops(p_lat, p_lng, p_radius_km)                                │
+│  • Relational Schemas: routes, stops, buses, trips, tickets, payments, incidents  │
 └───────────────────────────────────────────────────────────────────────────────────┘
 ```
 
