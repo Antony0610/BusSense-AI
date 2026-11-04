@@ -1,5 +1,5 @@
 # BusSense AI — System Architecture
-## Supabase-Native Cloud & Edge Infrastructure (Phase H22)
+## Supabase-Native Cloud & Edge Infrastructure (Phase H23)
 
 This document describes the high-level and detailed architecture of the BusSense AI platform, including data pipelines, Supabase-native services, Vercel frontend hosting, Flutter mobile release builds, and machine learning boundaries.
 

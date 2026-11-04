@@ -66,3 +66,7 @@ datasets/videos/*annotated*
 # Database Backups & Dumps
 backups/*.json
 !backups/.gitkeep
+
+# Supabase CLI temp files
+supabase/.temp/
+

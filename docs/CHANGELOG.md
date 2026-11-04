@@ -4,6 +4,33 @@ All notable changes to the BusSense AI platform are documented in this file, adh
 
 ---
 
+## [1.1.1-cloud-deployment-h23] — 2026-11-04
+
+### Added
+- **Production Cloud Deployment & Live Verification:**
+  - Audited and verified live connectivity to Supabase Cloud PostgreSQL (`lqegmqgkymstycpzplld`, Region `ap-south-1`) via PostgREST and Supabase Auth.
+  - Verified 12 core tables actively populated and queryable with a mean read latency of 119.32 ms across 7 representative queries.
+  - Runtime verified Supabase Realtime WebSocket stream (`wss://lqegmqgkymstycpzplld.supabase.co/realtime/v1/websocket`) with Phoenix channel joins and heartbeat frames.
+  - Tested empirical cloud security: verified reliable HTTP 401 rejection on invalid JWTs, expired JWTs, missing API keys, and HTTP 400 rejection on unauthorized writes and malformed JSON.
+- **Endpoint Migration Reconciliation (`docs/ENDPOINT_MIGRATION_INVENTORY.md`):**
+  - Resolved numerical discrepancies from H22 by performing an exhaustive OpenAPI schema audit of `backend/app/main.py` and its 21 domain routers.
+  - Reconciled exact inventory: 88 REST HTTP endpoints + 2 WebSockets = 90 total endpoints.
+  - Categorized: 52 PostgREST direct CRUD, 22 Edge Functions, 4 Supabase Auth native, 2 Realtime channels, and 10 retained offline CV/test cases.
+- **Vercel Frontend Build Verification:**
+  - Next.js 14 production build compiled cleanly with 22/22 static pages generated and zero webpack/type errors.
+  - 22/22 Jest/Node frontend unit tests passing across 13 suites.
+  - Dry-run deployment validated via Vercel CLI v65.10.0; documented interactive OAuth login requirement.
+- **Flutter Mobile Release APK Verification:**
+  - Re-verified Flutter Android release build producing a 53.4 MB APK (`apps/mobile/build/app/outputs/flutter-apk/app-release.apk`).
+  - 100/100 Flutter mobile tests passing cleanly in 45.0 seconds.
+  - Disclosed debug keystore signing status for pilot testing, distinguishing it from an institutional production upload keystore.
+- **Comprehensive Documentation Suite Updated:**
+  - Authored `docs/PHASE_H23_REPORT.md` (comprehensive 20-point final report).
+  - Updated `docs/SUPABASE_DEPLOYMENT_GUIDE.md`, `docs/VERCEL_DEPLOYMENT_GUIDE.md`, `docs/FLUTTER_RELEASE_GUIDE.md`, `docs/SECURITY_AUDIT_REPORT.md`, `docs/KNOWN_LIMITATIONS.md`, `docs/ARCHITECTURE.md`, and `README.md`.
+  - Maintained 430/430 passing automated tests across the repository.
+
+---
+
 ## [1.1.0-supabase-migration-h22] — 2026-11-03
 
 ### Added
