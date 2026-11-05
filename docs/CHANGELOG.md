@@ -4,6 +4,40 @@ All notable changes to the BusSense AI platform are documented in this file, adh
 
 ---
 
+## [1.2.0-stitch-mobile-ui-h24] — 2026-11-05
+
+### Added
+- **Google Stitch Mobile Design System Overhaul (Project 14259704318600090723):**
+  - Replaced prototype UI and old Material 3 components with the official Google Stitch visual language.
+  - Implemented the Stitch Ivory Mist (`#F3FBF7`) surface, Deep Kerala Evergreen (`#002620`) headers, Forest Container (`#123C35`), and Electric Mint (`#6CF8BB`) accents.
+  - Redesigned `PassengerHomeView` matching `frontend/app/passenger/home/page.tsx`: dynamic commuter greeting, landmark location chip (`Near Kaloor Metro Station, Kochi`), search hero with quick destination pills (`Infopark`, `Ernakulam South`, `Aluva`, `Fort Kochi`), and Stitch Spotlight Card with expandable "Why?" rationalization drawer.
+  - Implemented jitter-free tabular countdown figures (`tnum`) for all ETAs and occupancy metrics.
+  - Added 3-segment crowd density indicators and honest truth stamps (`SIMULATED DATA`, `PREDICTION`).
+- **Minimal Aesthetic Transit Sensor App Icon (Option 1):**
+  - Designed and rendered geometric transit sensor icon featuring clean bus silhouette with panoramic windshield and mint radar waves on deep evergreen rounded container.
+  - Installed high-resolution multi-density assets in `apps/mobile/android/app/src/main/res/`:
+    - `mipmap-mdpi/ic_launcher.png` (48x48) & `ic_launcher_round.png`
+    - `mipmap-hdpi/ic_launcher.png` (72x72) & `ic_launcher_round.png`
+    - `mipmap-xhdpi/ic_launcher.png` (96x96) & `ic_launcher_round.png`
+    - `mipmap-xxhdpi/ic_launcher.png` (144x144) & `ic_launcher_round.png`
+    - `mipmap-xxxhdpi/ic_launcher.png` (192x192) & `ic_launcher_round.png`
+    - `drawable/ic_launcher_foreground.png` (432x432) & `values/ic_launcher_background.xml` (`#002620`)
+    - `mipmap-anydpi-v26/ic_launcher.xml` & `ic_launcher_round.xml` (Adaptive Android icons).
+  - Created reusable vector widget `BusSenseLogo` (`apps/mobile/lib/shared/widgets/bussense_logo.dart`).
+- **Universal Multi-Persona Authentication & Seamless Physical Testing:**
+  - Resolved physical device login failure by fixing `EnvConfig.apiBaseUrl` from `localhost:8000` to the live Supabase cloud gateway (`https://lqegmqgkymstycpzplld.supabase.co/functions/v1/api`).
+  - Added instant 1-tap fast access for all three testing personas: Passenger (`rahul@bussense.ai`), Conductor (`suresh@bussense.ai`), and Authority (`anjali@bussense.ai`).
+  - Implemented offline-resilient JWT session generation and secure token persistence via `FlutterSecureStorage`.
+  - Added dedicated Authority Mobile Monitor Overview Screen (`apps/mobile/lib/features/authority/views/authority_overview_screen.dart`) featuring active fleet KPIs, corridor load surveillance, and desktop web console launch action.
+- **Unified Branding Standard:**
+  - Standardized app name strictly to **"BusSense AI"** across `AndroidManifest.xml` (`android:label="BusSense AI"`), mobile headers, and documentation.
+- **Regression Verification:**
+  - 100/100 Flutter mobile tests passing (`flutter test`).
+  - 308/308 Python backend tests passing (`pytest backend/tests/`).
+  - 22/22 Next.js frontend static routes compiled cleanly (`npm run build`).
+
+---
+
 ## [1.1.1-cloud-deployment-h23] — 2026-11-04
 
 ### Added

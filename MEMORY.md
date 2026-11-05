@@ -26,8 +26,7 @@ SEE  ──►  SENSE  ──►  PREDICT  ──►  RECOMMEND  ──►  OPTI
 
 | Component | Target Architecture | Current Prototype Implementation |
 |---|---|---|
-| **Passenger Application** | Unified Flutter Mobile App in `apps/mobile/` (Passenger Experience) | Unified Flutter Mobile App (`apps/mobile/`) |
-| **Driver / Conductor App** | Unified Flutter Mobile App in `apps/mobile/` (Conductor Cockpit) | Unified Flutter Mobile App (`apps/mobile/`) |
+| **Unified Mobile Application** | Unified Flutter Mobile App in `apps/mobile/` ("BusSense AI" for Commuters, Conductors & Authority) | Unified Flutter Mobile App (`apps/mobile/`) |
 | **Authority Command Center** | Next.js 14 + TypeScript web application (`frontend/`) | Next.js 14 + TypeScript + Tailwind CSS (Desktop Dashboard) |
 | **Backend API** | FastAPI + Python 3.14 (Async ASGI) | FastAPI + Uvicorn + Pydantic v2 in `backend/` |
 | **Database & Auth** | Supabase (PostgreSQL 15) | Live on Supabase project `https://lqegmqgkymstycpzplld.supabase.co` |
